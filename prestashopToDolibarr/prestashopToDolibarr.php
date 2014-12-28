@@ -771,13 +771,12 @@ class prestashopToDolibarr extends Module {
 			$test_synchro1order="style='display:none;'";
 			$test_texte_synchro1order=" Synchroniser CETTE COMMANDE UNIQUEMENT";
 			$cible_synchro1order='href="../modules/prestashopToDolibarr/synchro1order.php?id_order='.$params["id_order"].'"';
-			$test_texte_synchro1order_cron='INEXISTANT';
 
             $display = '<br />
                 <fieldset style="width: 400px">
                     <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Synchronisation Dolibarr').'</legend>    
                 <br />
-                    <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a  '.$cible_synchro1order.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchro1order.' ').'</b></a><br />
+                    <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a  '.$cible_synchro1order.' target="blank" ><b style="color: #000099;">Synchroniser la commande</b></a><br />
                 </fieldset>
                 
                 <br />';
