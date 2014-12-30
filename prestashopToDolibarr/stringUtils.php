@@ -11,14 +11,14 @@ function accents_majuscules($chaine) {
     $chaine = str_replace( "ñ", "Ñ", $chaine);$chaine = str_replace( "ç", "Ç", $chaine);$chaine = str_replace( "þ", "Þ", $chaine);$chaine = str_replace( "ÿ", "Ý", $chaine);$chaine = str_replace( "æ", "Æ", $chaine);
     $chaine = str_replace( "œ", "Œ", $chaine);$chaine = str_replace( "ð", "Ð", $chaine);$chaine = str_replace( "ø", "Ø", $chaine);
     $chaine=strtoupper($chaine);
-    return $chaine;
+    return utf8_encode($chaine);
 }
 
 function accents_minuscules($chaine) {
     $chaine = htmlentities($chaine);
     $chaine = html_entity_decode($chaine,ENT_QUOTES,"ISO-8859-1");
     $chaine = str_replace( "'", " ", $chaine);
-    return $chaine;
+    return utf8_encode($chaine);
 }
 
 function accents_sans($chaine) {
@@ -40,14 +40,14 @@ function accents_sans($chaine) {
     $chaine = str_replace( "Ù", "U", $chaine);$chaine = str_replace( "Ú", "U", $chaine);$chaine = str_replace( "Û", "U", $chaine);$chaine = str_replace( "Ü", "U", $chaine);$chaine = str_replace( "Ý", "Y", $chaine);
     $chaine = str_replace( "Ñ", "N", $chaine);$chaine = str_replace( "Ç", "C", $chaine);$chaine = str_replace( "Æ", "AE", $chaine);
     $chaine = str_replace( "Œ", "OE", $chaine);$chaine = str_replace( "Ð", "D", $chaine);
-    return $chaine;
+    return utf8_encode($chaine);
 }
 
 function tel_cacateres($chaine) {
     $chaine = htmlentities($chaine);
     $chaine = html_entity_decode($chaine,ENT_QUOTES,"ISO-8859-1");
     $chaine = str_replace( "'", "", $chaine);$chaine = str_replace( "-", "", $chaine);$chaine = str_replace( ".", "", $chaine);$chaine = str_replace( " ", "", $chaine);$chaine = str_replace( ",", "", $chaine);$chaine = str_replace( "_", "", $chaine);
-    return $chaine;
+    return utf8_encode($chaine);
     }
     
 function produits_caract($chaine)  {
@@ -56,6 +56,6 @@ function produits_caract($chaine)  {
     $chaine = str_replace( "'", " ", $chaine);
     $chaine = str_replace( "<p> </p>", "<br />", $chaine);
     $chaine = str_replace( "</p>", "", $chaine);
-    return $chaine;
+    return utf8_encode($chaine);
 }
 ?>

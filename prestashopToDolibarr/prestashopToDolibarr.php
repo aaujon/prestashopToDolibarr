@@ -18,9 +18,7 @@ class prestashopToDolibarr extends Module {
 			Configuration::updateValue('dolibarr_server_url', 'localhost');
             Configuration::updateValue('libelle_port', 'port expedition');
             Configuration::updateValue('code_article_port', '1234567890');
-            Configuration::updateValue('prefixrefclient', 'Boutique prestashop N-');
-            Configuration::updateValue('nbclients', '1');
-            Configuration::updateValue('nbcommandes', '1');
+            Configuration::updateValue('prefix_ref_client', 'Client prestashop N-');
             Configuration::updateValue('validated', '0');
             Configuration::updateValue('memo_id', '0');
 
@@ -80,9 +78,7 @@ class prestashopToDolibarr extends Module {
                 $dolibarr_password=$_POST['mdpdoli'];
                 $libelle_port=$_POST['libelleport'];
                 $code_article_port=$_POST['codearticleport'];        
-                $prefix_ref_client=$_POST['prefixrefclient'];
-                $nb_clients=$_POST['nbclients'];
-                $nb_commandes=$_POST['nbcommandes'];          
+                $prefix_ref_client=$_POST['prefix_ref_client'];       
                 $option_image=$_POST['option_image'];
                 $decremente=$_POST['decremente'];
                 $stock_doli=$_POST['stock_doli'];                                    
@@ -95,9 +91,7 @@ class prestashopToDolibarr extends Module {
                Configuration::updateValue('dolibarr_password', $dolibarr_password);
                Configuration::updateValue('libelle_port', $libelle_port);
                Configuration::updateValue('code_article_port', $code_article_port);
-               Configuration::updateValue('prefixrefclient', $prefixrefclient);
-               Configuration::updateValue('nbclients', $nbclients);
-               Configuration::updateValue('nbcommandes', $nbcommandes);
+               Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
                Configuration::updateValue('option_image', $option_image);
                Configuration::updateValue('decremente', $decremente);
                Configuration::updateValue('stock_doli', $stock_doli);
@@ -275,13 +269,8 @@ class prestashopToDolibarr extends Module {
 							<label>'.$this->l('Code article du port').'</label>
 							<div class="margin-form"><input type="text" size="33" name="codearticleport" value="'.htmlentities(Configuration::get('code_article_port'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Code article du port = ID - maxi 10 chiffres => exemple : 1234567890').'</i></div>
 							<label>'.$this->l('Prefixe ref Cde client').'</label>
-							<div class="margin-form"><input type="text" size="33" name="prefixrefclient" value="'.htmlentities(Configuration::get('prefix_ref_client'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Préfixe réf commande client => exemple : Boutique CDE N').'</i></div>
-							<label>'.$this->l('Synchro de "x" clients').'</label>
-							<div class="margin-form"><input type="text" size="3" name="nbclients" value="'.htmlentities(Configuration::get('nb_clients'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Synchroniser les "x" derniers clients => 0 pour tous (nombre petit = traitement rapide)').'</i></div>
-							<label>'.$this->l('Synchro de "x" commandes').'</label>
-							<div class="margin-form"><input type="text" size="3" name="nbcommandes" value="'.htmlentities(Configuration::get('nb_commandes'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Synchroniser les "x" dernieres commande => 0 pour toutes (nombre petit = traitement rapide) <br> ATTENTION : <br>SEULES LES COMMANDES DEJA EXPORTEES AVEC All4Doli SONT IDENTIFIEES POUR EVITER LES DOUBLONS.<br>COMMENCEZ PAR METTRE LA QUANTITE A 1 PUIS A 2 QUAND IL Y EN A 2, ET AINSI DE SUITE....<br>SI VOUS N AVEZ ENCORE RIEN FAIT DANS Dolibarr, VOUS POUVEZ DIRECTEMENT METTRE LA QUANTITE A 0.').'</i></div>
+							<div class="margin-form"><input type="text" size="33" name="prefix_ref_client" value="'.htmlentities(Configuration::get('prefix_ref_client'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Préfixe réf commande client => exemple : Boutique CDE N').'</i></div>
 					</fieldset>
-					
 					<fieldset '.$visible_invisible.' '.$param_parametres_visible.' class="width10"><legend><img src="../img/admin/contact.gif" />'.$this->l('Donnees pour les Produits').'</legend>
 					  <label>'.$this->l('Option IMAGE').'</label>
 						<div class="margin-form"><input type="checkbox" '.$option_image.' name="option_image" value="checked" /><i>'.$this->l(' -> Option pour intégrer une image à la description du produit').'</i></div>
@@ -786,14 +775,7 @@ class prestashopToDolibarr extends Module {
         private function _postProcess() {
             if (Tools::getValue('cron_method'))
                 Configuration::updateValue('cron_method', Tools::getValue('cron_method'));
-            $cron_test = $this->cronExists($this->id, 'test');
-            if ($cron_test != Tools::getValue('cron_test')) 
-                {
-                if (Tools::getValue('cron_test'))
-                  $this->addTest();
-                else
-                  $this->deleteTest();
-                }
+
             if (Tools::isSubmit('submitAddCron'))
                 {
                 $this->addCronURL(Tools::getValue('cron_url'), Tools::getValue('cron_mhdmd'));
@@ -1016,19 +998,5 @@ class prestashopToDolibarr extends Module {
                 $host = (Configuration::get('PS_SSL_ENABLED') ? 'https://' : 'http://').$host;
             return $host;
             }	
-        public function addTest() 
-            {
-            Configuration::deleteByName('cron_lasttest');
-            return Module::getInstanceByName('cron')->addCron($this->id, 'test', '* * * * *');
-            }
-        public function deleteTest() 
-            {
-            Configuration::deleteByName('cron_lasttest');
-            return Module::getInstanceByName('cron')->deleteCron($this->id, 'test');
-            }
-        public function test() 
-            {
-            return Configuration::updateValue('cron_lasttest', time());
-            }
 }
 ?>

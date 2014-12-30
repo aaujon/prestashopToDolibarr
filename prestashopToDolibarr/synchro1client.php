@@ -1,30 +1,21 @@
 <?php
-$id_customer=$_GET['id_customer'];
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-	include('../../config/config.inc.php');
-	include('stringUtils.php');
-	include('dolibarr/DolibarrApi.php');
+include('../../config/config.inc.php');
+include('stringUtils.php');
+include('dolibarr/DolibarrApi.php');
 
-	echo "synchronisation client : $id_customer<br>"; 
+function synchroClient($id_customer)
+{
+	echo "Synchronisation client : $id_customer<br>"; 
 
-	// RECUPERATION DES PARAMETRES
-	$libelle_port=Configuration::get('libelle_port');
-		$chaine=$libelle_port;    
-		$chaine= accents_sans("$chaine");   
-		$libelle_port=$chaine;
-	$code_article_port=Configuration::get('code_article_port');
-	$label=Configuration::get('prefix_ref_client');
-		$chaine=$label;    
-		$chaine= accents_sans("$chaine");   
-		$label=$chaine;
-	$option_image=Configuration::get('option_image');
-	$decremente=Configuration::get('decremente');                            
-	$memo_id=Configuration::get('memo_id');                   
+	// retrieve params
+	$prefix_ref_client=Configuration::get('prefix_ref_client');
+	$prefix_ref_client = accents_sans("$prefix_ref_client");                    
 
 	// retrieve client data
 	$donnees_customer = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."customer where id_customer='".$id_customer."'");
-	var_dump($donnees_customer);
+	//var_dump($donnees_customer);
 	$id_gender = $donnees_customer['id_gender'];
 	$note = $donnees_customer['note'];   
 	$note = accents_minuscules("$note");
@@ -77,6 +68,7 @@ error_reporting(E_ALL);
 		$postcode=$adresse['postcode'];
 		$city=$adresse['city'];   
 		$city= accents_majuscules("$city");
+        $city = utf8_encode($city);
 
 		$id_country=$adresse['id_country'];
 		//TODO improve country correspondance
@@ -102,12 +94,12 @@ error_reporting(E_ALL);
 		$dolibarr = Dolibarr::getInstance();
 
 		$result = $dolibarr->userExists($id_customer);
-		echo "<br>"; 
-		var_dump($result["result"]->result_code);
+		//echo "<br>"; 
+		//var_dump($result["result"]->result_code);
 		
 		$client = new DolibarrThirdParty();
 		$client->ref_ext = $id_customer;
-		$client->customer_code = "FV-".$id_customer;
+		$client->customer_code = $prefix_ref_client.$id_customer;
 		$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
 		$client->email = $mail;
 		$client->phone = $phone;
@@ -117,21 +109,25 @@ error_reporting(E_ALL);
 		$client->country_id = $country;
 		$client->date_modification = new DateTime('NOW');
 			
-		if ($result["result"]->result_code == "NOT_FOUND") {
+		if ($result["result"]->result_code == "NOT_FOUND")
+        {
 			// CREATE NEW USER
 			echo "Create new user<br>";
 			$client->date_creation = $creation_date;
 			$result = $dolibarr->createUser($client);
-			if ($result["result"]->result_code == "KO") {
+			if ($result["result"]->result_code == "KO")
+            {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
-		} else {
+		} else
+        {
 			// UPDATE USER
 			echo "update user<br>";
 			$oldClient = $result["thirdparty"];
 			$client->id = $oldClient->id;
 			$result = $dolibarr->updateUser($client);
-			if ($result["result"]->result_code == "KO") {
+			if ($result["result"]->result_code == "KO")
+            {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
 		}
@@ -165,4 +161,11 @@ error_reporting(E_ALL);
 	echo '<SCRIPT>javascript:window.close()</SCRIPT>';
 // FIN AFFICHAGE ****************************************************
 */
+}
+
+if (isset($_GET['id_customer']))
+{
+    $id_customer=$_GET['id_customer'];
+    synchroClient($id_customer);
+}
 ?>

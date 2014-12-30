@@ -34,8 +34,8 @@ class Dolibarr {
 		$this->initAuthentication();
 		// init webservice client
 		$this->client = new SoapClient($this->dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
-		var_dump($this->client);
-		var_dump($this->client->__getFunctions());
+		//var_dump($this->client);
+		//var_dump($this->client->__getFunctions());
 	}
 
 	public static function getInstance() {
@@ -46,35 +46,31 @@ class Dolibarr {
 	}
 
 	public function updateUser($thirdParty) {
-		echo "<br>in updateUser";
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "thirdparty" => $thirdParty
 		);
-		var_dump($params);
-		echo "<br>before call : <br>";
+
 		// Invoke webservice
 		$response = $this->client->__soapCall("updateThirdParty", $params);
-		echo "<br>result : <br>";
-		var_dump($response);
+		//echo "<br>result : <br>";
+		//var_dump($response);
 
 		return $response;
 	}
 	
 	public function createUser($thirdParty) {
-		echo "<br>in createUser";
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "thirdparty" => $thirdParty
 		);
-		var_dump($params);
-		echo "<br>before call : <br>";
+
 		// Invoke webservice
 		$response = $this->client->__soapCall("createThirdParty", $params);
-		echo "<br>result : <br>";
-		var_dump($response);
+		//echo "<br>result : <br>";
+		//var_dump($response);
 
 		return $response;
 	}
@@ -89,7 +85,7 @@ class Dolibarr {
 
 		// Invoke webservice
 		$response = $this->client->__soapCall("getThirdParty", $params);
-		var_dump($response);
+		//var_dump($response);
 
 		return $response;
 	}
@@ -100,11 +96,10 @@ class Dolibarr {
 		  "authentication" => $this->authentication,
 		  "filterthirdparty" => ""
 		);
-		var_dump($params);
 
 		// Invoke webservice
 		$response = $this->client->__soapCall("getListOfThirdParties", $params);
-		var_dump($response);
+		//var_dump($response);
 
 		return $response;
 	}
