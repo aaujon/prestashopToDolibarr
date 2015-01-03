@@ -33,32 +33,6 @@ function synchroClient($id_customer)
 
 	// Retrieve client address
 	$adresse = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."address where id_customer='".$id_customer."'");
-		/*$entreprise=$adresse['company'];
-		$entreprise = str_replace( "ë", "e", $entreprise);$entreprise = str_replace( "Ë", "E", $entreprise);
-		$chaine=$entreprise;    
-		$chaine= accents_majuscules("$chaine");   
-		$entreprise=$chaine;
-		$prenom=$adresse['firstname'];
-		$prenom = str_replace( "ë", "e", $prenom);$prenom = str_replace( "Ë", "E", $prenom);
-		$chaine=$prenom;    
-		$chaine= accents_majuscules("$chaine");
-		$prenom=$chaine;
-		$nom=$adresse['lastname'];
-		$nom = str_replace( "ë", "e", $nom);$nom = str_replace( "Ë", "E", $nom);
-		$chaine=$nom;    
-		$chaine= accents_majuscules("$chaine");
-		$nom=$chaine;*/
-		/*if ($entreprise!="") {
-			$societe=$entreprise;
-			$chaine=$societe;    
-			$chaine= accents_majuscules("$chaine");
-			$societe=$chaine;
-		} elseif ($entreprise=="") {
-			$societe="$nom $prenom";
-			$chaine=$societe;    
-			$chaine= accents_majuscules("$chaine");
-			$societe=$chaine;
-		}*/
 		$address1=$adresse['address1'];
 		$address1= accents_majuscules("$address1");
 
@@ -68,7 +42,6 @@ function synchroClient($id_customer)
 		$postcode=$adresse['postcode'];
 		$city=$adresse['city'];   
 		$city= accents_majuscules("$city");
-        $city = utf8_encode($city);
 
 		$id_country=$adresse['id_country'];
 		//TODO improve country correspondance
@@ -87,18 +60,16 @@ function synchroClient($id_customer)
 			$phone = tel_cacateres("$mobile");
 		}
 
-		
 		$creation_date=$adresse['date_add'];
 
 		// CHECK IF ALREADY EXISTS IN DOLIBARR
 		$dolibarr = Dolibarr::getInstance();
 
-		$result = $dolibarr->userExists($id_customer);
-		//echo "<br>"; 
-		//var_dump($result["result"]->result_code);
+        var_dump($prefix_ref_client.$id_customer);
+		$result = $dolibarr->userExists($prefix_ref_client.$id_customer);
 		
 		$client = new DolibarrThirdParty();
-		$client->ref_ext = $id_customer;
+		$client->ref_ext = $prefix_ref_client.$id_customer;
 		$client->customer_code = $prefix_ref_client.$id_customer;
 		$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
 		$client->email = $mail;
@@ -108,14 +79,14 @@ function synchroClient($id_customer)
 		$client->zip = $postcode;
 		$client->country_id = $country;
 		$client->date_modification = new DateTime('NOW');
-			
-		if ($result["result"]->result_code == "NOT_FOUND")
+
+		if ($result["result"]->result_code == 'NOT_FOUND')
         {
 			// CREATE NEW USER
-			echo "Create new user<br>";
+			echo "Create new user : <br>";
 			$client->date_creation = $creation_date;
 			$result = $dolibarr->createUser($client);
-			if ($result["result"]->result_code == "KO")
+			if ($result["result"]->result_code == 'KO')
             {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
@@ -126,7 +97,7 @@ function synchroClient($id_customer)
 			$oldClient = $result["thirdparty"];
 			$client->id = $oldClient->id;
 			$result = $dolibarr->updateUser($client);
-			if ($result["result"]->result_code == "KO")
+			if ($result["result"]->result_code == 'KO')
             {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}

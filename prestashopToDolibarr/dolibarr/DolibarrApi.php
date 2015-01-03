@@ -76,16 +76,17 @@ class Dolibarr {
 	}
 	
 	public function userExists($ref_ext) {
-		echo "<br>in userExists";
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
+          "id" => "",
+          "ref" => "",
 		  "ref_ext" => $ref_ext
 		);
 
 		// Invoke webservice
 		$response = $this->client->__soapCall("getThirdParty", $params);
-		//var_dump($response);
+		var_dump($response);
 
 		return $response;
 	}
