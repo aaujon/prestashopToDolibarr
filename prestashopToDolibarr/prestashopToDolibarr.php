@@ -3,7 +3,8 @@ class prestashopToDolibarr extends Module {
         private	$_html = '';
         private $_postErrors = array();
         const INSTALL_SQL_FILE = 'install.sql';
-        public function __construct() { 
+        public function __construct()
+        { 
             $this->name = 'prestashopToDolibarr';
             $this->tab = 'migration_tools';
             $this->version = ' 21_11_2013 > P1.5.4 (+1.4.11) / D3.4.0';
@@ -14,8 +15,9 @@ class prestashopToDolibarr extends Module {
             $this->description = $this->l('Synchronisation des Commandes, Produits, Clients et Stocks de PrestaShop vers Dolibarr. Module basé sur le module all4doli par Presta 2 Doli');
         }
 
-        public function install() {
-			Configuration::updateValue('dolibarr_server_url', 'localhost');
+        public function install()
+        {
+			Configuration::updateValue('dolibarr_server_url', 'https://myserver/dolibarr/htdocs');
             Configuration::updateValue('libelle_port', 'port expedition');
             Configuration::updateValue('code_article_port', '1234567890');
             Configuration::updateValue('prefix_ref_client', 'Client prestashop N-');
@@ -31,49 +33,49 @@ class prestashopToDolibarr extends Module {
             return true;
         }
 
-        public function uninstall() {
+        public function uninstall()
+        {
 			Configuration::updateValue('validated', '0');
 
             parent::uninstall();
         }
         
-        public function getContent() {
+        public function getContent()
+        {
 			include_once(dirname(__FILE__).'/dolibarr/DolibarrApi.php');
 			
             $output = '<h2>'.$this->displayName.'</h2>';
 
-            if (isset($_POST['submitdonnees'])) {
+            if (Tools::isSubmit('submitdonnees'))
+            {
                 $dolibarr_server_url=$_POST['dolibarr_server_url'];
                 $dolibarr_key=$_POST['dolibarr_key'];
                 $dolibarr_login=$_POST['admindoli'];
                 $dolibarr_password=$_POST['mdpdoli'];
                 $libelle_port=$_POST['libelleport'];
                 $code_article_port=$_POST['codearticleport'];        
-                $prefix_ref_client=$_POST['prefix_ref_client'];       
-                $option_image=$_POST['option_image'];
-                $decremente=$_POST['decremente'];
-                $stock_doli=$_POST['stock_doli'];                                    
-                $memo_parametres=$_POST['memo_parametres'];
-                echo "$dolibarr_server_url"." "."$dolibarr_key"." "."$dolibarr_login"." "."$dolibarr_password"." "."$base_doli"." "."$prefix_doli";
+                $prefix_ref_client=$_POST['prefix_ref_client'];                                           
                
-               Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
-               Configuration::updateValue('dolibarr_key', $dolibarr_key);
-               Configuration::updateValue('dolibarr_login', $dolibarr_login);
-               Configuration::updateValue('dolibarr_password', $dolibarr_password);
-               Configuration::updateValue('libelle_port', $libelle_port);
-               Configuration::updateValue('code_article_port', $code_article_port);
-               Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
-               Configuration::updateValue('option_image', $option_image);
-               Configuration::updateValue('decremente', $decremente);
-               Configuration::updateValue('stock_doli', $stock_doli);
-               Configuration::updateValue('memo_parametres', $memo_parametres);
+                Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
+                Configuration::updateValue('dolibarr_key', $dolibarr_key);
+                Configuration::updateValue('dolibarr_login', $dolibarr_login);
+                Configuration::updateValue('dolibarr_password', $dolibarr_password);
+                Configuration::updateValue('libelle_port', $libelle_port);
+                Configuration::updateValue('code_article_port', $code_article_port);
+                Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
+                Configuration::updateValue('option_image', $option_image);
+                Configuration::updateValue('decremente', $decremente);
+                Configuration::updateValue('stock_doli', $stock_doli);
+                Configuration::updateValue('memo_parametres', $memo_parametres);
 
-				// test dolibarr webservices connexion
+                // test dolibarr webservices connexion
 				$client = new SoapClient($dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
 					
-				if (is_null($client)){
+				if (is_null($client))
+                {
 					$testdoliserveur="DOLIBARR : Paramètres incorrectes : vérifez l'adresse du serveur et que les webservices sont bien activés.<br>Arret du TEST";
-				} else {
+				} else
+                {
 					echo "Serveur webservice is enabled<br>";
 					$dolibarr = Dolibarr::getInstance();
 
@@ -93,7 +95,8 @@ class prestashopToDolibarr extends Module {
 
                 $validated = Configuration::get('validated');
                 
-                if($validated!='1') {
+                if($validated!='1')
+                {
                     $this->_html .= '
                     <div class="alert error">
                     <img src="../img/admin/warning.gif" alt="'.$this->l('Confirmation').'" />
@@ -112,33 +115,31 @@ class prestashopToDolibarr extends Module {
                     </fieldset> 
                     </div>';
                  }
-            } elseif (isset($_POST['synchro1client'])) {
-                $id_customer=$_POST['id_customer'];
-                include_once('synchro1client.php');
-                synchronizeClient($id_customer);
-			}
-
-            if (!empty($_POST))
-                $output .= $this->_html;  
-                $output .= $this->_displayErrors();
-                $output .= $this->_displayForm();
-            return $output;
             }
+
+
+            $output .= $this->_html;
+            $output .= $this->_displayErrors();
+            if (!Tools::isSubmit('action')) {
+                $output .= $this->_displayForm();
+            }
+
+            return $output;
+        }
+
         private function _displayErrors() {
             $nbErrors = sizeof($this->_postErrors);
             $output = '';
             if ($nbErrors) 
-                {
+            {
                 $output .= '
                 <div class="alert error">
                   <h3>'.($nbErrors > 1 ? $this->l('There are') : $this->l('There is')).' '.$nbErrors.' '.($nbErrors > 1 ? $this->l('errors') : $this->l('error')).'</h3>
                   <ol>';
                 foreach ($this->_postErrors AS $error)
                     $output .= '<li>'.$error.'</li>';
-                    $output .= '
-                    </ol>
-                    </div>';
-                }
+                    $output .= '</ol> </div>';
+            }
             return $output;
         }
 
@@ -232,22 +233,47 @@ class prestashopToDolibarr extends Module {
 					  <legend><img src="../modules/'.$this->name.'/synchro.png" /> '.$this->l('All 4 Dolibarr').'</legend>    
 						<fieldset style="width8">                                                                                                                                           
 								<legend><img src="../modules/'.$this->name.'/synchro.png" /> '.$this->l('Synchronisation manuelle des : ').'</legend>
-							  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroorder.'  target="blank" ><b  style="color: #000099;">' .$this->l(' '.$test_texte_synchroorder.' ').'</b></a><br />
-								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroclients.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchroclients.'').'</b></a><br />		
+
+								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroclients.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchroclients.'').'</b></a><br />	
+                            ';
+/*							 <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroorder.'  target="blank" ><b  style="color: #000099;">' .$this->l(' '.$test_texte_synchroorder.' ').'</b></a><br /> 
 								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a>'.$cible_synchrocateg.'<b style="color: #000099;">' .$this->l(' '.$test_texte_synchrocateg.'').'</b></a><br />
-								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroprod.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchroprod.'').'</b></a><br />
 								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchrostock2presta.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchrostock2presta.'').'</b></a><br />
+*/
+                            
+                        	$output .= '	
+								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroprod.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchroprod.'').'</b></a><br />
+
 						  <br />		
 						</fieldset>                  
 					</fieldset>
 					
 					<br />
-						</form>
-						<br /><br />';
+						</form><br />
+                        ';
+                        /*$ajax_url = $this->context->link->getAdminLink('AdminModules').'&configure='.$this->name.'&ajax&action=SynchronizeClients';
+                        $output .= '<div id="buttonSynchroniseClients"><button id="ajaxSynchronizeClientsButton">Synchronize clients</button></div>
+                                    <script type="text/javascript">
+                                            $("#buttonSynchroniseClients").on(\'click\', \'#ajaxSynchronizeClientsButton\', function (){
+                                                $.ajax({
+                                                    url: \''.$ajax_url . '\',
+                                                    data: {
+                                                        ajax: true,
+                                                        action: \'SynchronizeClients\',
+                                                    },
+                                                    success: function(output) {
+                                                        document.getElementById(\'buttonSynchroniseClients\').innerHTML += \'<a>\' + output + \'</a>\';
+                                                    }
+                                                }); 
+                                            });
+                                   </script>
+                        ';*/
+
 			return $output;
         }
 
-        function hookAdminCustomers($params) {
+        function hookAdminCustomers($params)
+        {
 			$test_synchro1client="style='display:none;'";
 			$test_texte_synchro1client=" Synchroniser la fiche client";
 			$cible_synchro1client='../modules/prestashopToDolibarr/synchro1client.php?id_customer='.$params["id_customer"];
@@ -262,7 +288,8 @@ class prestashopToDolibarr extends Module {
             return $display;
         }
     
-        function hookAdminOrder($params) {                
+        function hookAdminOrder($params)
+        {                
 			$test_synchro1order="style='display:none;'";
 			$test_texte_synchro1order=" Synchroniser CETTE COMMANDE UNIQUEMENT";
 			$cible_synchro1order='href="../modules/prestashopToDolibarr/synchro1order.php?id_order='.$params["id_order"].'"';
@@ -279,13 +306,27 @@ class prestashopToDolibarr extends Module {
         }
 
         public function getHttpHost($http = false, $entities = false)
-            {
+        {
             $host = (isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : $_SERVER['HTTP_HOST']);
             if ($entities)
                 $host = htmlspecialchars($host, ENT_COMPAT, 'UTF-8');
             if ($http)
                 $host = (Configuration::get('PS_SSL_ENABLED') ? 'https://' : 'http://').$host;
             return $host;
-            }	
+        }
+
+        public function displayAjaxSynchronizeClients()
+        {
+            /*$tmp = Configuration::getInt('tmp_synchroclients_id');
+            var_dump($tmp);
+            include_once('synchroclients.php');
+            if (synchronizeClients($tmp)) {
+                die(Tools::jsonEncode("Synchronize of client : ".$tmp));
+            } else {
+               die(Tools::jsonEncode("Synchronize of ".$tmp."clients done!"));
+            }*/
+            echo "ok";
+            die(Tools::jsonEncode("Synchronize of clients done!"));
+        }
 }
 ?>
