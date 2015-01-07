@@ -17,17 +17,13 @@ class prestashopToDolibarr extends Module {
 
         public function install()
         {
-			Configuration::updateValue('dolibarr_server_url', 'https://myserver/dolibarr/htdocs');
-            Configuration::updateValue('libelle_port', 'port expedition');
-            Configuration::updateValue('code_article_port', '1234567890');
-            Configuration::updateValue('prefix_ref_client', 'Client prestashop N-');
             Configuration::updateValue('validated', '0');
-            Configuration::updateValue('memo_id', '0');
 
             if (!parent::install()
                 OR !$this->registerHook('footer')
                 OR !$this->registerHook('adminOrder')
-                OR !$this->registerHook('AdminCustomers') ) {
+                OR !$this->registerHook('AdminCustomers')
+                OR !$this->registerHook('displayAdminProductsExtra') ) {
 				return false;
 			}
             return true;
@@ -36,7 +32,6 @@ class prestashopToDolibarr extends Module {
         public function uninstall()
         {
 			Configuration::updateValue('validated', '0');
-
             parent::uninstall();
         }
         
@@ -63,6 +58,7 @@ class prestashopToDolibarr extends Module {
                 Configuration::updateValue('libelle_port', $libelle_port);
                 Configuration::updateValue('code_article_port', $code_article_port);
                 Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
+                Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
                 Configuration::updateValue('option_image', $option_image);
                 Configuration::updateValue('decremente', $decremente);
                 Configuration::updateValue('stock_doli', $stock_doli);
@@ -210,7 +206,9 @@ class prestashopToDolibarr extends Module {
 							<label>'.$this->l('Code article du port').'</label>
 							<div class="margin-form"><input type="text" size="33" name="codearticleport" value="'.htmlentities(Configuration::get('code_article_port'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Code article du port = ID - maxi 10 chiffres => exemple : 1234567890').'</i></div>
 							<label>'.$this->l('Prefixe ref Cde client').'</label>
-							<div class="margin-form"><input type="text" size="33" name="prefix_ref_client" value="'.htmlentities(Configuration::get('prefix_ref_client'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Préfixe réf commande client => exemple : Boutique CDE N').'</i></div>
+							<div class="margin-form"><input type="text" size="33" name="prefix_ref_client" value="'.htmlentities(Configuration::get('prefix_ref_client'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Client prefix => example : Client Prestashop N').'</i></div>
+							<label>'.$this->l('Prefixe ref Cde client').'</label>
+							<div class="margin-form"><input type="text" size="33" name="prefix_ref_product" value="'.htmlentities(Configuration::get('prefix_ref_product'), ENT_COMPAT, 'UTF-8').'" /><i>'.$this->l(' -> Product prefix => example : Product Prestashop N').'</i></div>
 					</fieldset>
 					<fieldset class="width10"><legend><img src="../img/admin/contact.gif" />'.$this->l('Donnees pour les Produits').'</legend>
 					  <label>'.$this->l('Option IMAGE').'</label>
@@ -274,8 +272,6 @@ class prestashopToDolibarr extends Module {
 
         function hookAdminCustomers($params)
         {
-			$test_synchro1client="style='display:none;'";
-			$test_texte_synchro1client=" Synchroniser la fiche client";
 			$cible_synchro1client='../modules/prestashopToDolibarr/synchro1client.php?id_customer='.$params["id_customer"];
             $display = '
             <br />
@@ -290,8 +286,6 @@ class prestashopToDolibarr extends Module {
     
         function hookAdminOrder($params)
         {                
-			$test_synchro1order="style='display:none;'";
-			$test_texte_synchro1order=" Synchroniser CETTE COMMANDE UNIQUEMENT";
 			$cible_synchro1order='href="../modules/prestashopToDolibarr/synchro1order.php?id_order='.$params["id_order"].'"';
 
             $display = '<br />
@@ -302,6 +296,21 @@ class prestashopToDolibarr extends Module {
                 </fieldset>
                 
                 <br />';
+            return $display;
+        }
+
+        public function hookDisplayAdminProductsExtra($params)
+        {
+	        $id_product = (int)Tools::getValue('id_product');		
+	        $synchro1product='../modules/prestashopToDolibarr/synchro1product.php?id_product='.$id_product;
+            $display = '
+            <br />
+            <fieldset class="width10">
+                <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Synchronisation Dolibarr').'</legend>    
+            <fieldset class="width8"> 
+                <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'<a href='.$synchro1product.' target="blank" ><b style="color: #000099;">Synchroniser le produit</b></a><br />
+              </fieldset>
+            </fieldset>';
             return $display;
         }
 

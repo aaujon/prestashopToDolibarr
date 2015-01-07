@@ -62,11 +62,11 @@ function synchroClient($id_customer)
 
 		$creation_date=$adresse['date_add'];
 
-		// CHECK IF ALREADY EXISTS IN DOLIBARR
+
 		$dolibarr = Dolibarr::getInstance();
 
-        var_dump($prefix_ref_client.$id_customer);
-		$result = $dolibarr->userExists($prefix_ref_client.$id_customer);
+		// Check if already exists in Dolibarr
+		$exists = $dolibarr->userExists($prefix_ref_client.$id_customer);
 		
 		$client = new DolibarrThirdParty();
 		$client->ref_ext = $prefix_ref_client.$id_customer;
@@ -80,11 +80,10 @@ function synchroClient($id_customer)
 		$client->country_id = $country;
 		$client->date_modification = new DateTime('NOW');
 
-		if ($result["result"]->result_code == 'NOT_FOUND')
+		if ($exists["result"]->result_code == 'NOT_FOUND')
         {
-			// CREATE NEW USER
+			// Create new user
 			echo "Create new user : <br>";
-			$client->date_creation = $creation_date;
 			$result = $dolibarr->createUser($client);
 			if ($result["result"]->result_code == 'KO')
             {
@@ -92,51 +91,21 @@ function synchroClient($id_customer)
 			}
 		} else
         {
-			// UPDATE USER
+			// Update user
 			echo "update user<br>";
-			$oldClient = $result["thirdparty"];
+			$oldClient = $exists["thirdparty"];
 			$client->id = $oldClient->id;
 			$result = $dolibarr->updateUser($client);
 			if ($result["result"]->result_code == 'KO')
             {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
-		}
-	
-		
-	// DEFINITION DE L'AFFICHAGE *************************************************************
-/*
-	$echo ='COMPTE CLIENT OUVERT LE : '.$date.'';
-	$echo ='';
-	$echo =''.$echo.'Le '.$date_synchro.' à '.$heure_synchro.'\n';
-	$echo =''.$echo.'\n';
-	$echo =''.$echo.'[ SYNCHRONISATION REUSSIE ]\n';
-	$echo =''.$echo.'\n';
-	$echo =''.$echo.'---------------------------------------------------\n';
-	$echo =''.$echo.'La fiche client ID : '.$rowid_client.'\n';
-	$echo =''.$echo.'Nom du client : '.$societe.'\n';
-	$echo =''.$echo.'\n';
-	$echo =''.$echo.'eMail : '.$mail.'\n';
-	$echo =''.$echo.'---------------------------------------------------\n';
-	$echo =''.$echo.'COMPTE CLIENT OUVERT LE : '.$date.'\n';
-	$echo =''.$echo.'\n';
-	$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-	$echo =''.$echo.'Info Configuration :\n';
-	$echo =''.$echo.'PrestaShop : '.$version_presta.' / Dolibarr : '.$version_dolibarr.' \n';
-	$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-	$echo =''.$echo.'\n';
-	// FIN DEFINITION DE L'AFFICHAGE *************************************************************
-
-	// AFFICHAGE ****************************************************
-	echo "<script language='JavaScript'>alert('$echo')</script>";   
-	echo '<SCRIPT>javascript:window.close()</SCRIPT>';
-// FIN AFFICHAGE ****************************************************
-*/
+		}	
 }
 
-if (isset($_GET['id_customer']))
+if (Tools::isSubmit'id_customer'))
 {
-    $id_customer=$_GET['id_customer'];
+    $id_customer=Tools::getValue('id_customer');
     synchroClient($id_customer);
 }
 ?>
