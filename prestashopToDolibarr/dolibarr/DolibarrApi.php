@@ -11,6 +11,7 @@ llx_array(4) {
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 include('DolibarrThirdParty.php');
+include('DolibarrProduct.php');
 include('DolibarrAuthentication.php');
 
 class Dolibarr {
@@ -18,7 +19,8 @@ class Dolibarr {
 	
 	private $authentication;
 	private $dolibarr_server_url;
-	private $client;
+	private $client_thirdparty;
+    private $client_product;
 	
 	private function initAuthentication() {
 		// load credentials
@@ -33,9 +35,10 @@ class Dolibarr {
 	private function __construct() {
 		$this->initAuthentication();
 		// init webservice client
-		$this->client = new SoapClient($this->dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
-		//var_dump($this->client);
-		//var_dump($this->client->__getFunctions());
+		$this->client_thirdparty = new SoapClient($this->dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
+		$this->client_product = new SoapClient($this->dolibarr_server_url."/webservices/server_productorservice.php?wsdl");
+		//var_dump($this->client_product);
+		//var_dump($this->client_product->__getFunctions());
 	}
 
 	public static function getInstance() {
@@ -45,36 +48,7 @@ class Dolibarr {
 		return self::$_instance;
 	}
 
-	public function updateUser($thirdParty) {
-		// Set parameters for the request
-		$params = array(
-		  "authentication" => $this->authentication,
-		  "thirdparty" => $thirdParty
-		);
-
-		// Invoke webservice
-		$response = $this->client->__soapCall("updateThirdParty", $params);
-		//echo "<br>result : <br>";
-		//var_dump($response);
-
-		return $response;
-	}
-	
-	public function createUser($thirdParty) {
-		// Set parameters for the request
-		$params = array(
-		  "authentication" => $this->authentication,
-		  "thirdparty" => $thirdParty
-		);
-
-		// Invoke webservice
-		$response = $this->client->__soapCall("createThirdParty", $params);
-		//echo "<br>result : <br>";
-		//var_dump($response);
-
-		return $response;
-	}
-	
+    /********** Methods for users **********/
 	public function userExists($ref_ext) {
 		// Set parameters for the request
 		$params = array(
@@ -85,8 +59,33 @@ class Dolibarr {
 		);
 
 		// Invoke webservice
-		$response = $this->client->__soapCall("getThirdParty", $params);
-		var_dump($response);
+		$response = $this->client_thirdparty->__soapCall("getThirdParty", $params);
+
+		return $response;
+	}
+
+	public function createUser($thirdParty) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "thirdparty" => $thirdParty
+		);
+
+		// Invoke webservice
+		$response = $this->client_thirdparty->__soapCall("createThirdParty", $params);
+
+		return $response;
+	}
+
+	public function updateUser($thirdParty) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "thirdparty" => $thirdParty
+		);
+
+		// Invoke webservice
+		$response = $this->client_thirdparty->__soapCall("updateThirdParty", $params);
 
 		return $response;
 	}
@@ -99,9 +98,53 @@ class Dolibarr {
 		);
 
 		// Invoke webservice
-		$response = $this->client->__soapCall("getListOfThirdParties", $params);
-		//var_dump($response);
+		$response = $this->client_thirdparty->__soapCall("getListOfThirdParties", $params);
 
+		return $response;
+	}
+
+    /********** Methods for products **********/
+
+	public function productExists($ref_ext) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+          "id" => "",
+          "ref" => "",
+		  "ref_ext" => $ref_ext
+		);
+
+		// Invoke webservice
+		$response = $this->client_product->__soapCall("getProductOrService", $params);
+		var_dump($response);
+
+		return $response;
+	}
+
+	public function createProduct($product) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "product" => $product
+		);
+
+		// Invoke webservice
+		$response = $this->client_product->__soapCall("createProductOrService", $params);
+		var_dump($response);
+
+		return $response;
+	}
+
+	public function updateProduct($product) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "product" => $product
+		);
+
+		// Invoke webservice
+		$response = $this->client_product->__soapCall("updateProductOrService", $params);
+		var_dump($response);
 		return $response;
 	}
 }

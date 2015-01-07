@@ -11,11 +11,11 @@ class DolibarrProduct {
 	public $date_creation = ""; // dateTime
 	public $date_modification = ""; // dateTime
     public $note = "Synchronized from PrestaShop";
-    public $status_tobuy;
-    public $status_tosell;
+    public $status_tobuy = "0";
+    public $status_tosell = "1";
     public $barcode;
     public $barcode_type;
-    public $country_id;
+    public $country_id = "1";
     public $country_code;
     public $customcode;
     public $price_net;
@@ -29,9 +29,12 @@ class DolibarrProduct {
     public $localtax2_tx;
     public $stock_alert;
     public $stock_real;
+    public $pmp;
     public $stock_pmp;
     public $canvas;
     public $import_key;
     public $dir;
     public $images;
+}
+
 ?>
