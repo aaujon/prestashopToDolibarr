@@ -18,6 +18,8 @@ class prestashopToDolibarr extends Module {
     public function install()
     {
         Configuration::updateValue('validated', '0');
+        Configuration::updateValue('clients_last_synchro', "1970-01-01 00:00:00");
+        Configuration::updateValue('products_last_synchro', "1970-01-01 00:00:00");
 
         if (!parent::install()
             OR !$this->registerHook('footer')
