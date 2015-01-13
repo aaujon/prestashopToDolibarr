@@ -51,6 +51,7 @@ class prestashopToDolibarr extends Module {
                 $dolibarr_password = Tools::getValue('dolibarr_password');
 
                 $prefix_ref_client = Tools::getValue('prefix_ref_client');
+                $client_status = Tools::getValue('client_status');
                 $prefix_ref_product = Tools::getValue('prefix_ref_product');                                          
                
                 Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
@@ -64,6 +65,7 @@ class prestashopToDolibarr extends Module {
                 //Configuration::updateValue('libelle_port', $libelle_port);
                 //Configuration::updateValue('code_article_port', $code_article_port);
                 Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
+                Configuration::updateValue('client_status', $client_status);
                 Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
                 //Configuration::updateValue('option_image', $option_image);
                 //Configuration::updateValue('decremente', $decremente);
@@ -144,6 +146,17 @@ class prestashopToDolibarr extends Module {
     {
         // Get default language
         $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+
+        $client_status_options = array(
+          array(
+            'id_option' => 0,
+            'name' => 'Closed'
+          ),
+          array(
+            'id_option' => 1,
+            'name' => 'In activity'
+          ),
+        );
          
         // Init Fields form array
         $fields_form[0]['form'] = array(
@@ -199,6 +212,27 @@ class prestashopToDolibarr extends Module {
                     'required' => false
                 ),
                 array(
+                  'type' => 'select',
+                  'label' => $this->l('Dolibarr client status'),
+                  'desc' => $this->l('The status client will be in Dolibarr'),
+                  'name' => 'client_status',                     // The content of the 'id' attribute of the <select> tag.
+                  'required' => true,                              // If set to true, this option must be set.
+                  'options' => array(
+                    'query' => array(
+                                  array(
+                                    'id_option' => 0,
+                                    'name' => 'Closed'
+                                  ),
+                                  array(
+                                    'id_option' => 1,
+                                    'name' => 'In activity'
+                                  ),
+                                ),                           // $options contains the data itself.
+                    'id' => 'id_option',                           // The value of the 'id' key must be the same as the key for 'value' attribute of the <option> tag in each $options sub-array.
+                    'name' => 'name'                               // The value of the 'name' key must be the same as the key for the text content of the <option> tag in each $options sub-array.
+                  )
+                ),
+                array(
                     'type' => 'text',
                     'label' => $this->l('Product reference prefix'),
                     'name' => 'prefix_ref_product',
@@ -244,8 +278,9 @@ class prestashopToDolibarr extends Module {
         $helper->fields_value['dolibarr_login'] = Configuration::get('dolibarr_login');
         $helper->fields_value['dolibarr_password'] = Configuration::get('dolibarr_password');
 
-        $helper->fields_value['prefix_ref_product'] = Configuration::get('prefix_ref_product');
+        $helper->fields_value['client_status'] = Configuration::get('client_status');
         $helper->fields_value['prefix_ref_client'] = Configuration::get('prefix_ref_client');
+        $helper->fields_value['prefix_ref_product'] = Configuration::get('prefix_ref_product');
          
         return $helper->generateForm($fields_form);
     }

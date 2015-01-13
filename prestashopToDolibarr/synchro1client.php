@@ -11,7 +11,8 @@ function synchroClient($id_customer)
 
 	// retrieve params
 	$prefix_ref_client=Configuration::get('prefix_ref_client');
-	$prefix_ref_client = accents_sans("$prefix_ref_client");                    
+	$prefix_ref_client = accents_sans("$prefix_ref_client");   
+	$client_status=Configuration::get('client_status');                 
 
 	// retrieve client data
 	$donnees_customer = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."customer where id_customer='".$id_customer."'");
@@ -71,6 +72,7 @@ function synchroClient($id_customer)
 		$client = new DolibarrThirdParty();
 		$client->ref_ext = $prefix_ref_client.$id_customer;
 		$client->customer_code = $prefix_ref_client.$id_customer;
+        $client->status = $client_status;
 		$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
 		$client->email = $mail;
 		$client->phone = $phone;
@@ -103,7 +105,7 @@ function synchroClient($id_customer)
 		}	
 }
 
-if (Tools::isSubmit'id_customer'))
+if (Tools::isSubmit('id_customer'))
 {
     $id_customer=Tools::getValue('id_customer');
     synchroClient($id_customer);

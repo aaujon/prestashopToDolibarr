@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 include('synchro1client.php');
 
-$last_syncro = Configuration::get('clients_last_synchro');
+$last_synchro = Configuration::get('clients_last_synchro');
 echo "Synchronisation of clients begins for modification since ".$last_synchro."<br>";
 
 
