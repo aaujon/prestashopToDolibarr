@@ -63,46 +63,45 @@ function synchroClient($id_customer)
 
 		$creation_date=$adresse['date_add'];
 
+	$dolibarr = Dolibarr::getInstance();
 
-		$dolibarr = Dolibarr::getInstance();
-
-		// Check if already exists in Dolibarr
-		$exists = $dolibarr->userExists($prefix_ref_client.$id_customer);
+	// Check if already exists in Dolibarr
+	$exists = $dolibarr->userExists($prefix_ref_client.$id_customer);
 		
-		$client = new DolibarrThirdParty();
-		$client->ref_ext = $prefix_ref_client.$id_customer;
-		$client->customer_code = $prefix_ref_client.$id_customer;
-        $client->status = $client_status;
-		$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
-		$client->email = $mail;
-		$client->phone = $phone;
-		$client->address = $address1." ".$address2;
-		$client->town = $city;
-		$client->zip = $postcode;
-		$client->country_id = $country;
-		$client->date_modification = new DateTime('NOW');
+	$client = new DolibarrThirdParty();
+	$client->ref_ext = $prefix_ref_client.$id_customer;
+	$client->customer_code = $prefix_ref_client.$id_customer;
+    $client->status = $client_status;
+	$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
+	$client->email = $mail;
+	$client->phone = $phone;
+	$client->address = $address1." ".$address2;
+	$client->town = $city;
+	$client->zip = $postcode;
+	$client->country_id = $country;
+	$client->date_modification = new DateTime('NOW');
 
-		if ($exists["result"]->result_code == 'NOT_FOUND')
+	if ($exists["result"]->result_code == 'NOT_FOUND')
+    {
+		// Create new user
+		echo "Create new user : <br>";
+		$result = $dolibarr->createUser($client);
+		if ($result["result"]->result_code == 'KO')
         {
-			// Create new user
-			echo "Create new user : <br>";
-			$result = $dolibarr->createUser($client);
-			if ($result["result"]->result_code == 'KO')
-            {
-				echo "Erreur de synchronisation : ".$result["result"]->result_label;
-			}
-		} else
+			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+		}
+	} else
+    {
+		// Update user
+		echo "update user<br>";
+		$oldClient = $exists["thirdparty"];
+		$client->id = $oldClient->id;
+		$result = $dolibarr->updateUser($client);
+		if ($result["result"]->result_code == 'KO')
         {
-			// Update user
-			echo "update user<br>";
-			$oldClient = $exists["thirdparty"];
-			$client->id = $oldClient->id;
-			$result = $dolibarr->updateUser($client);
-			if ($result["result"]->result_code == 'KO')
-            {
-				echo "Erreur de synchronisation : ".$result["result"]->result_label;
-			}
-		}	
+			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+		}
+	}	
 }
 
 if (Tools::isSubmit('id_customer'))
