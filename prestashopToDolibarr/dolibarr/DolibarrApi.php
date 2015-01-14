@@ -21,6 +21,7 @@ class Dolibarr {
 	private $dolibarr_server_url;
 	private $client_thirdparty;
     private $client_product;
+    private $client_order;
 	
 	private function initAuthentication() {
 		// load credentials
@@ -37,6 +38,7 @@ class Dolibarr {
 		// init webservice client
 		$this->client_thirdparty = new SoapClient($this->dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
 		$this->client_product = new SoapClient($this->dolibarr_server_url."/webservices/server_productorservice.php?wsdl");
+		$this->client_order = new SoapClient($this->dolibarr_server_url."/webservices/server_order.php?wsdl");
 		//var_dump($this->client_product);
 		//var_dump($this->client_product->__getFunctions());
 	}
@@ -147,7 +149,51 @@ class Dolibarr {
 		var_dump($response);
 		return $response;
 	}
-}
+	
+	/********** Methods for orders **********/
 
+	public function orderExists($ref_ext) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+          "id" => "",
+          "ref" => "",
+		  "ref_ext" => $ref_ext
+		);
+
+		// Invoke webservice
+		$response = $this->client_order->__soapCall("getOrder", $params);
+		var_dump($response);
+
+		return $response;
+	}
+
+	public function createOrder($order) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "order" => $order
+		);
+
+		// Invoke webservice
+		$response = $this->client_order->__soapCall("createOrder", $params);
+		var_dump($response);
+
+		return $response;
+	}
+
+	public function updateOrder($order) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "order" => $order
+		);
+
+		// Invoke webservice
+		$response = $this->client_order->__soapCall("updateOrder", $params);
+		var_dump($response);
+		return $response;
+	}
+}
 
 ?>
