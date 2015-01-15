@@ -12,6 +12,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 include('DolibarrThirdParty.php');
 include('DolibarrProduct.php');
+include('DolibarrOrder.php');
 include('DolibarrAuthentication.php');
 
 class Dolibarr {
@@ -51,7 +52,7 @@ class Dolibarr {
 	}
 
     /********** Methods for users **********/
-	public function userExists($ref_ext) {
+	public function getUser($ref_ext) {
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
@@ -107,7 +108,7 @@ class Dolibarr {
 
     /********** Methods for products **********/
 
-	public function productExists($ref_ext) {
+	public function getProduct($ref_ext) {
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
@@ -152,7 +153,7 @@ class Dolibarr {
 	
 	/********** Methods for orders **********/
 
-	public function orderExists($ref_ext) {
+	public function getOrder($ref_ext) {
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
@@ -174,7 +175,7 @@ class Dolibarr {
 		  "authentication" => $this->authentication,
 		  "order" => $order
 		);
-
+		var_dump($params);
 		// Invoke webservice
 		$response = $this->client_order->__soapCall("createOrder", $params);
 		var_dump($response);

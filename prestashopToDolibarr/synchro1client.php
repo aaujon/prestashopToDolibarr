@@ -61,12 +61,10 @@ function synchroClient($id_customer)
 			$phone = tel_cacateres("$mobile");
 		}
 
-		$creation_date=$adresse['date_add'];
-
 	$dolibarr = Dolibarr::getInstance();
 
 	// Check if already exists in Dolibarr
-	$exists = $dolibarr->userExists($prefix_ref_client.$id_customer);
+	$exists = $dolibarr->getUser($prefix_ref_client.$id_customer);
 		
 	$client = new DolibarrThirdParty();
 	$client->ref_ext = $prefix_ref_client.$id_customer;

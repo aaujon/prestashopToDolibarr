@@ -57,7 +57,7 @@ function synchroProduct($id_product)
         $dolibarr = Dolibarr::getInstance();
 
 		// Check if already exists in Dolibarr
-		$exists = $dolibarr->productExists($prefix_ref_product.$id_product);
+		$exists = $dolibarr->getProduct($prefix_ref_product.$id_product);
 		
 		$product = new DolibarrProduct();
 		$product->ref_ext = $prefix_ref_product.$id_product;
