@@ -9,6 +9,9 @@ function synchroOrder($id_order)
 {
 	echo "Synchronisation order : $id_order<br>"; 
 
+	$prefix_ref_client=Configuration::get('prefix_ref_client');
+	$prefix_ref_client = accents_sans("$prefix_ref_client");
+	
 	// DEFINITION DE DONNEES *****************************************
 	$total_article=0;
 	$rang=0;
@@ -28,7 +31,7 @@ function synchroOrder($id_order)
 	$order = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."orders where id_order='".$id_order."'");
 	$id_customer=$order['id_customer'];
 	$date_order=$order['date_add'];
-	$ref_client_doli="$label$id_order";
+	//$ref_client_doli="$label$id_order";
 	$total=$order['total_paid'];
 	$total = sprintf("%.2f",$total);
 	//$total_paid_real_TTC=$order['total_paid_real'];
@@ -53,57 +56,69 @@ function synchroOrder($id_order)
 	$type_paiement = $order['payment'];
 	$type_paiement = accents_minuscules("$type_paiement");   
 	$valid=$order['valid'];
+	
+	if ($valid == 0) {
+		echo "order is not valid. skip it.";
+		return;
+	}
 
 	// FIN RECUPERATION DONNEES DE LA COMMANDE ************************************
 
 	// get order status
 	$create_invoice = false;
 	$statut_propal=4;       //** Propal validée signée
-	$order_status=1;     //** Commande en Validé
+	$order_status=0;     // draft by default
 	$commande_facturee=0;   //** Commande NON facturée
 	$invoice_status=0;      //** Facture en brouillon
 	$paye=0;                //** Facture non payée
 	$facture=0;             //** Commande Facturée --> Passe la commande en traitée quand statut='Livré'
-	$order_history = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."order_history where id_order='".$id_order."'");
-	$id_order_state=$order_history['id_order_state'];
-	if (($id_order_state==1) or ($id_order_state==10)) //** Paiement par chèque ou virement
-	{
-		$order_status=0;           //** Commande en brouillon
+	
+	// handle order status
+	$state=$order['current_state'];
+	switch ($state) {
+		//** Paiement par chèque ou virement
+		case 0:
+		case 10:
+			$order_status = 0; // draft
+			break;
+		// Paiement accepted
+		case 2:
+			$create_invoice = true;
+			$order_status = 1;           // validated
+			//$commande_facturee=1;         //** Commande facturée
+			//$invoice_status=2;            //** Facture en paiement validé
+			//$paye=1;                      //** Facture en payée
+			break;
+		//** En cours de préparation
+		case 3:
+			$order_status = 2;           //** Commande en Envoi en cours (mais pas encore expédiée)
+			break;
+		// in delivery
+		case 4: 
+			$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			break;
+		// delivered
+		case 5:
+		case 35:
+		case 37:
+			$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			break;
+		// cancelled or refund
+		case 6:
+		case 7:
+			$order_status='-1';        // canceled
+			break;
+		// paiement error or not validated
+		case 8: 
+			$order_status=0;           // draft
+			break;
 	}
-	if ($id_order_state==2) //** Paiement accepté
-	{
-		$create_invoice = true;
-		$order_status=1;           //** Commande en Validé
-		$commande_facturee=1;         //** Commande facturée
-		$invoice_status=2;            //** Facture en paiement validé
-		$paye=1;                      //** Facture en payée
-	}
-	if ($id_order_state==3) //** En cours de préparation
-	{
-		$order_status=2;           //** Commande en Envoi en cours (mais pas encore expédiée)
-	}
-	if ($id_order_state==4) //** En cours de livraison
-	{
-		$order_status=3;           //** Commande en Délivrée (Expédition effectuée)
-	}
-	if (($id_order_state==5) or ($id_order_state==35) or ($id_order_state==37)) //** Livré
-	{
-		$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
-	}
-	if (($id_order_state==6) or ($id_order_state==7)) //** Commande annulée ou remboursée
-	{
-		$order_status='-1';        //** Commande en Annulée
-	}
-	if ($id_order_state==8) //** Commande en erreur de paiement ou avec un sattut de commande non validée
-	{
-		$order_status=0;           //** Commande en brouillon
-	}
-
+/*
 	// RECUPERATION ADRESSES DU CLIENT *************************************************
 	$sql_adresse="select * from ".$prefix_presta."address where id_customer='".$id_customer."'";
 	$result_adresse = mysql_query($sql_adresse) or die($sql_adresse."<br />\n".mysql_error());
 	while ($adresse = mysql_fetch_array($result_adresse))
-		{
+	{
 		$entreprise=$adresse['company'];
 			$entreprise = str_replace( "ë", "e", $entreprise);$entreprise = str_replace( "Ë", "E", $entreprise);
 			$chaine=$entreprise;    
@@ -120,19 +135,19 @@ function synchroOrder($id_order)
 			$chaine= accents_majuscules("$chaine");
 			$nom=$chaine;
 		if ($entreprise!="")
-			{
+		{
 			$societe=$entreprise;
 				$chaine=$societe;    
 				$chaine= accents_majuscules("$chaine");
 				$societe=$chaine;
-			}
+		}
 		if ($entreprise=="")
-			{
+		{
 			$societe="$nom $prenom";
 				$chaine=$societe;    
 				$chaine= accents_majuscules("$chaine");
 				$societe=$chaine;
-			}
+		}
 		$champadresse1=$adresse['address1'] ;
 			$chaine=$champadresse1;    
 			$chaine= accents_majuscules("$chaine");
@@ -174,6 +189,7 @@ function synchroOrder($id_order)
 			$chaine= accents_minuscules("$chaine");
 			$poste=$chaine;
 		$emetteur_paiement = "$entreprise $nom";
+	}*/
 	/*
 	// Insertion TYPE DE PAIEMENT ***********************************************************
 	$sql_recup_verif_mode_paiement="select * from ".$prefix_doli."c_paiement where libelle='Paiement en ligne'";
@@ -375,22 +391,73 @@ function synchroOrder($id_order)
 	// FIN DETERMINATION ID COMMANDE DOLIBARR *******************************************
 */
 
-	// Create order
+	// load order details
+	$products = Db::getInstance()->executeS("select * from "._DB_PREFIX_."order_detail where id_order='".$id_order."'");
+	$count = 0;
+	foreach ( $products as $product )
+	{
+		$line = new DolibarrOrderLines();
+		$line->desc = $product['product_name'];
+		$line->qty = $product['product_quantity'];
+		$line->unitprice = $product['unit_price_tax_excl'];
+		$line->remise = $product['reduction_amount'];
+		$line->remise_percent = $product['reduction_percent'];
+		$line->total_net = $product['total_price_tax_incl'];
+		$line->total_vat = $product['total_price_tax_excl'];
+
+		$line->product_id = $product['product_name'];
+		$line->product_ref = $product['product_name'];
+
+		$line->product_label = $product['product_name'];
+		$line->product_desc = "";
+
+		/*public $id;
+		public $type;
+
+		public $vat_rate;
+
+		public $total;
+		public $date_start = ""; // dateTime
+		public $date_end = ""; // dateTime*/
+		
+		$lines[$count]= $line;
+		$count++;
+
+	}
+
 	$dolibarr = Dolibarr::getInstance();
+	
+	var_dump($prefix_ref_client.$id_customer);
+	// retrieve user
+	$client = $dolibarr->getUser($prefix_ref_client.$id_customer);
+	if ($client["result"]->result_code == 'NOT_FOUND')
+    {
+		echo "Error : client doesn't exist. Try to synchronize clients first.";
+		return;
+	}
+	var_dump($client["thirdparty"]->id);
 
 	// Check if already exists in Dolibarr
-	$exists = $dolibarr->orderExists($id_order);
-		
-	$order = new DolibarrOrder();
-	$order->ref_ext = $id_order;
-    $order->total_net = $total_net;
-	$order->date_modification = new DateTime('NOW');
+	$exists = $dolibarr->getOrder($id_order);
+	
+	// Create order
+	$dolibarrOrder = new DolibarrOrder();
+	$dolibarrOrder->ref_ext = $id_order;
+	$dolibarrOrder->thirdparty_id = $client["thirdparty"]->id;
+	$dolibarrOrder->date = $order["date_add"];
+	if ($order['delivery_number'] != 0) {
+		$dolibarrOrder->date_livraison = $order['delivery_date'];
+	}
+	$dolibarrOrder->status = $order_status;
+    $dolibarrOrder->total_net = $total_net;
+	$dolibarrOrder->date_modification = new DateTime('NOW');
+	$dolibarrOrder->lines = $lines;
 
 	if ($exists["result"]->result_code == 'NOT_FOUND')
     {
 		// Create new order
 		echo "Create new order : <br>";
-		$result = $dolibarr->createOrder($order);
+		$result = $dolibarr->createOrder($dolibarrOrder);
 		if ($result["result"]->result_code == 'KO')
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
@@ -400,16 +467,15 @@ function synchroOrder($id_order)
 		// Update order
 		echo "update order<br>";
 		$oldOrder = $exists["order"];
-		$order->id = $oldOrder->id;
-		$result = $dolibarr->updateUser($order);
+		$dolibarrOrder->id = $oldOrder->id;
+		$result = $dolibarr->updateUser($dolibarrOrder);
 		if ($result["result"]->result_code == 'KO')
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
 		}
 	}	
 	
-
-
+/*
 	// DETERMINATION ID FACTURE DOLIBARR *******************************************
 	$req_id_facture="select max(rowid) from ".$prefix_doli."facture";
 	$req_id_facture=mysql_query($req_id_facture);
@@ -703,467 +769,6 @@ function synchroOrder($id_order)
 		$total_tva_article=$total_ttc_article-$total_article_ht;
 		$total_tva_article=sprintf("%.2f",$total_tva_article);                                                             
 		// FIN CALCUL DU PRIX DU PRODUIT SUR LA COMMANDE **********************************************
-
-		// CALCUL DU PRIX DU PRODUIT NORMALEMENT SANS REDUCTION **********************************************
-		$donnees_product = Db::getInstance()->GetRow("select * from ".$prefix_presta."product where id_product='".$product_id."'");
-		$prix_produit_normal_HT=$donnees_product['price'];
-
-		// VERIFICATION SI REDUCTION / PROMO ******************************************************            
-		$donnees_specific_price = Db::getInstance()->GetRow("select * from ".$prefix_presta."specific_price where id_product='".$product_id."'");
-		$reduc_valeur=$donnees_specific_price['reduction'];
-		$reduction_type=$donnees_specific_price['reduction_type'];
-		$date_debut_reduc=$donnees_specific_price['from'];
-		$date_debut_reduc = str_replace( "-", " ", $date_debut_reduc);
-		$date_debut_reduc = str_replace( ":", " ", $date_debut_reduc);
-		$date_debut_reduc = str_replace( " ", "", $date_debut_reduc);
-		$date_fin_reduc=$donnees_specific_price['to'];
-		$date_fin_reduc = str_replace( "-", " ", $date_fin_reduc);
-		$date_fin_reduc = str_replace( ":", " ", $date_fin_reduc);
-		$date_fin_reduc = str_replace( " ", "", $date_fin_reduc);
-		$date_fin_reduc_lu=$donnees_specific_price['to'];
-		$date_jour = date('Y-m-d G:i:s');
-		$date_jour = str_replace( "-", " ", $date_jour);
-		$date_jour = str_replace( ":", " ", $date_jour);
-		$date_jour = str_replace( " ", "", $date_jour);
-		$prix_produit_normal_HT=$donnees_product['price'];
-		$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-		if (($date_jour<$date_debut_reduc) or ($date_jour>$date_fin_reduc))
-			{
-			$prix_produit_normal_HT=$donnees_product['price'];
-			$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-			}
-		if (($date_jour>=$date_debut_reduc) and ($date_jour<=$date_fin_reduc))
-			{
-			if ($reduction_type=="percentage")
-				{
-				$calcul_valeur_pourcen=$prix_produit_normal_HT*$reduc_valeur;
-				$prix_produit_normal_HT=$prix_produit_normal_HT-$calcul_valeur_pourcen;
-				$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-				}
-			if (($reduction_type=="amount"))
-				{
-				$prix_produit_normal_HT=$prix_produit_normal_HT-$reduc_valeur;
-				$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-				}
-			}
-		if (($date_fin_reduc_lu==="0000-00-00 00:00:00"))
-			{
-			if ($reduction_type=="percentage")
-				{
-				$calcul_valeur_pourcen=$prix_produit_normal_HT*$reduc_valeur;
-				$prix_produit_normal_HT=$prix_produit_normal_HT-$calcul_valeur_pourcen;
-				$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-				}
-			if (($reduction_type=="amount"))
-				{
-				$prix_produit_normal_HT=$prix_produit_normal_HT-$reduc_valeur;
-				$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-				}
-			}
-		if($prix_produit_normal_HT<=0)
-			{
-			$prix_produit_normal_HT=0;
-			}
-		// FIN VERIFICATION SI REDUCTION / PROMO ******************************************************
-
-		// TAUX TVA PRODUIT NORMAL ***********************************************************************    
-		if ($version_presta>"1.3")
-			{
-			$id_tax_rules_group=$donnees_product['id_tax_rules_group'];
-			$donnees_id_tax_rules_group = Db::getInstance()->GetRow("select * from ".$prefix_presta."tax_rule where id_tax_rules_group='".$id_tax_rules_group."'");
-			$id_tax=$donnees_id_tax_rules_group['id_tax'];
-			$donnees_tax = Db::getInstance()->GetRow("select * from ".$prefix_presta."tax where id_tax='".$id_tax."'");
-			$tax_rate_product_normal=$donnees_tax['rate'];
-			}
-		if ($version_presta<="1.3")
-			{
-			$id_tax=$donnees_product['id_tax'];
-			$donnees_tax = Db::getInstance()->GetRow("select * from ".$prefix_presta."tax where id_tax='".$id_tax."'");
-			$tax_rate_product_normal=$donnees_tax['rate'];
-			}
-		$taux_taxe_produits_normal=$tax_rate_product_normal/100;
-		$taux_taxe_produits_normal=$taux_taxe_produits_normal+1;
-		$taux_taxe_produits_normal=sprintf("%.2f",$taux_taxe_produits_normal);
-		// FIN TAUX TVA PRODUIT NORMAL ***********************************************************************
-
-		$prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
-		$prix_produit_normal_TTC=$prix_produit_HT*$taux_taxe_produits_normal;
-		$prix_produit_normal_TTC=sprintf("%.2f",$prix_produit_normal_TTC);
-		$tva_produit_normal=$prix_produit_normal_TTC-$prix_produit_normal_HT;
-		$tva_produit_normal=sprintf("%.2f",$tva_produit_normal);
-		// FIN CALCUL DU PRIX DU PRODUIT NORMALEMENT SANS REDUCTION **********************************************
-
-		// RECUPERATION DES DONNEES DU PRODUIT DANS LA BASE ARTICLES *********************************************
-		$active=$donnees_product['active'];
-		$ref_produit=$donnees_product['reference'];
-			$chaine=$ref_produit;    
-			$chaine= produits_caract("$chaine");
-			$ref_produit=$chaine;
-		$en_vente=$donnees_product['active'];
-		$barcode=$donnees_product['ean13'];
-		$datec=$donnees_product['date_add'];
-		$tms=$donnees_product['date_upd'];
-		$weight=$donnees_product['weight'];
-		// FIN RECUPERATION DES DONNEES DU PRODUIT DANS LA BASE ARTICLES *********************************************
-
-		// RECUPERATION ID IMAGE ****************************************************
-		$donnees_id_image = Db::getInstance()->GetRow("select * from ".$prefix_presta."image where id_product='".$product_id."'");
-		$id_image=$donnees_id_image['id_image'];
-		// FIN RECUPERATION ID IMAGE ****************************************************
-
-		// VERIFICATION DE LA DESCRIPTION PRODUIT **********************************************************    
-		$donnees_product_desc = Db::getInstance()->GetRow("select * from ".$prefix_presta."product_lang where id_product='".$product_id."' and id_lang='".$lang."'");
-		$label_produit=$donnees_product_desc['name'];
-			$chaine=$label_produit;    
-			$chaine= produits_caract("$chaine");
-			$label_produit=$chaine;
-		if($label_produit=="")
-			{
-			$label_produit="Défaut de Label sur ID $product_id";
-			}
-		if($ref_produit=="")
-			{
-			$ref_produit=$label_produit;
-			}
-		$description_produit=$donnees_product_desc['description'];
-			$chaine=$description_produit;    
-			$chaine= produits_caract("$chaine");
-			$description_produit=$chaine;
-		if ($description_produit=="")
-			{
-			$ref_produit="LA REFERENCE DU PRODUIT N\'EXISTE PLUS";
-			$label_produit="LE LABEL DU PRODUIT N\'EXISTE PLUS";
-			$description_produit="LA DESCRIPTION DU PRODUIT N\'EXISTE PLUS";
-			}                          
-		// FIN VERIFICATION DE LA DESCRIPTION PRODUIT **********************************************************
-
-		// PRODUIT NORMAL (PAS UNE DECLINAISON) *****************************    
-		if ($product_attribute_id==0)
-			{
-
-			// IMAGE PRODUIT EXISTE PAS **********************************
-			if (($id_image=="") and ($option_image!=""))
-				{
-				$description_produit="$description_produit<br />-<br />";
-				}
-			// FIN IMAGE PRODUIT EXISTE PAS **********************************
-			
-			// IMAGE EXISTE NOUVEAU SYSTEME STOCKAGE ******************************
-			if (($id_image!="") and ($option_image!=""))
-				{ 
-				if (!$fp = fopen("../../img/p/$product_id-$id_image-home.jpg","r"))
-					{ 
-					$dossier=substr($id_image,0,1);
-					$chemin = "../../img/p/$dossier";
-					$dossier_suiv=substr($id_image,1,1);
-					if($dossier_suiv!="")
-						{
-						$chemin = "$chemin/$dossier_suiv";
-							$dossier_suiv=substr($id_image,2,1);
-							if($dossier_suiv!="")
-								{
-								$chemin = "$chemin/$dossier_suiv";
-								}
-								$dossier_suiv=substr($id_image,3,1);
-								if($dossier_suiv!="")
-									{
-									$chemin = "$chemin/$dossier_suiv";
-									}
-									$dossier_suiv=substr($id_image,4,1);
-									if($dossier_suiv!="")
-										{
-										$chemin = "$chemin/$dossier_suiv";
-										}
-										$dossier_suiv=substr($id_image,5,1);
-										if($dossier_suiv!="")
-											{
-											$chemin = "$chemin/$dossier_suiv";
-											}
-											$dossier_suiv=substr($id_image,6,1);
-											if($dossier_suiv!="")
-												{
-												$chemin = "$chemin/$dossier_suiv";
-												}
-												$dossier_suiv=substr($id_image,7,1);
-												if($dossier_suiv!="")
-													{
-													$chemin = "$chemin/$dossier_suiv";
-													}
-													$dossier_suiv=substr($id_image,8,1);
-													if($dossier_suiv!="")
-														{
-														$chemin = "$chemin/$dossier_suiv";
-														}
-														$dossier_suiv=substr($id_image,9,1);
-														if($dossier_suiv!="")
-															{
-															$chemin = "$chemin/$dossier_suiv";
-															}
-															$dossier_suiv=substr($id_image,10,1);
-															if($dossier_suiv!="")
-																{
-																$chemin = "$chemin/$dossier_suiv";
-																}
-						}
-					$chemin = str_replace( "../..", "$uri", $chemin);
-					$title =  $ref_produit;
-					$title =  str_replace( " ", "_", $title);
-					$description_produit="$description_produit<br /><img title=$title src=$chemin/$id_image-home.jpg alt=Produit/>";
-					} 
-			// FIN IMAGE EXISTE NOUVEAU SYSTEME STOCKAGE ******************************
-
-			// IMAGE EXISTE ANCIEN SYSTEME STOCKAGE ******************************            
-			else
-				{
-				$title =  $ref_produit;
-				$title =  str_replace( " ", "_", $title);
-				$description_produit="$description_produit<br /><img title=$title src=$uri/img/p/$product_id-$id_image-home.jpg alt=Produit/>";                    
-				}
-			// FIN IMAGE EXISTE ANCIEN SYSTEME STOCKAGE ******************************
-				}
-			// FIN PRODUIT NORMAL (PAS UNE DECLINAISON) *****************************
-
-			// PRODUIT NORMAL SANS IMAGE ********************************************************************        
-			if ($option_image=="")
-				{
-				$description_produit=$description_produit;
-				}
-			}
-		// FIN PRODUIT NORMAL SANS IMAGE ********************************************************************
-
-		// RATTACHEMENT DU PRODUIT A LA CATEGORIE ***************************************************
-		$sql_category_product="select * from ".$prefix_presta."category_product where id_product='".$product_id."'";
-		$result_category_product = mysql_query($sql_category_product) or die($sql_category_product."<br />\n".mysql_error());
-		while ($creer_category_product = mysql_fetch_array($result_category_product))
-			{
-			$id_category_prod=$creer_category_product['id_category'];
-			mysql_connect("$serveur_doli","$admin_doli","$mdp_doli");
-			mysql_select_db("$base_doli");
-			mysql_query("SET NAMES UTF8");
-			mysql_query ("INSERT INTO ".$prefix_doli."categorie_product (fk_categorie,fk_product) 
-				VALUES ('".$id_category_prod."','".$product_id."')"); 
-			mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-			mysql_select_db("$base_presta");     
-			mysql_query("SET NAMES UTF8");
-			}
-		// FIN RATTACHEMENT DU PRODUIT A LA CATEGORIE ***************************************************
-
-		// PRODUIT DECLINAISON ***********************************************************        
-			if ($product_attribute_id!=0)
-				{
-				$creer_declinaisons = Db::getInstance()->GetRow("select * from ".$prefix_presta."product_attribute where id_product_attribute='".$product_attribute_id."'");
-				$id_product_attribute=$product_attribute_id;
-	//             $id_product_attribute=$creer_declinaisons['id_product_attribute'];
-				$donnees_id_image = Db::getInstance()->GetRow("select * from ".$prefix_presta."product_attribute_image where id_product_attribute='".$id_product_attribute."'");
-				$id_image=$donnees_id_image['id_image']; 
-				$ref_attribut=$creer_declinaisons['reference'];
-					$chaine=$ref_attribut;    
-					$chaine= produits_caract("$chaine");
-					$ref_attribut=$chaine;
-				$supplier_reference =$creer_declinaisons['supplier_reference'];
-					$chaine=$supplier_reference;    
-					$chaine= produits_caract("$chaine");
-					$supplier_reference=$chaine;
-				$location =$creer_declinaisons['location'];
-				$barcode =$creer_declinaisons['ean13'];
-				$upc =$creer_declinaisons['upc'];
-				$wholesale_price =$creer_declinaisons['wholesale_price'];
-				$wholesale_price=sprintf("%.2f",$wholesale_price);
-				$price_att =$creer_declinaisons['price'];
-				$price_att=sprintf("%.2f",$price_att);
-				$ecotax =$creer_declinaisons['ecotax'];
-				$ecotax=sprintf("%.2f",$ecotax);
-				$quantity =$creer_declinaisons['quantity'];
-				$weight =$creer_declinaisons['weight'];
-				$unit_price_impact =$creer_declinaisons['unit_price_impact'];
-				$price_attribut= $price_att+$prix_produit_normal_HT;
-				$price_attribut=sprintf("%.2f",$price_attribut);
-				$donnees_product_attribute_combination = Db::getInstance()->GetRow("select * from ".$prefix_presta."product_attribute_combination where id_product_attribute='".$id_product_attribute."'");
-				$product_attribute_combination=$donnees_product_attribute_combination['id_attribute'];
-				$donnees_attribute = Db::getInstance()->GetRow("select * from ".$prefix_presta."attribute where id_attribute='".$product_attribute_combination."'");
-				$id_attribute_group =$donnees_attribute['id_attribute_group'];
-				$donnees_attribute_group_lang = Db::getInstance()->GetRow("select * from ".$prefix_presta."attribute_group_lang where id_attribute_group='".$id_attribute_group."' and id_lang='".$lang."'");
-				$attribute_group_name =$donnees_attribute_group_lang['name'];
-					$chaine=$attribute_group_name;    
-					$chaine= produits_caract("$chaine");
-					$attribute_group_name=$chaine;
-				$donnees_attribute_lang = Db::getInstance()->GetRow("select * from ".$prefix_presta."attribute_lang where id_attribute='".$product_attribute_combination."' and id_lang='".$lang."'");
-				$attribute_lang_name =$donnees_attribute_lang['name'];                    
-					$chaine=$attribute_lang_name;    
-					$chaine= produits_caract("$chaine");
-					$attribute_lang_name=$chaine;
-				$id_attribute_lang_name=$donnees_attribute_lang['id_attribute'];
-				if ($attribute_lang_name=="")
-					{
-					$attribute_lang_name="*";
-					$attribute_group_name="DECLINAISON";  
-					}
-				if ($ref_attribut=="")
-					{
-					$ref_attribut="$ref_produit $attribute_lang_name";
-					}
-				if($ref_attribut==$ref_produit)
-					{
-					$ref_attribut="$ref_produit $attribute_lang_name *";
-					}
-			$label_produit_attribut="$label_produit<br /> $attribute_group_name = $attribute_lang_name";
-			$description_produit_attribut="$description_produit<br /><strong> $attribute_group_name = $attribute_lang_name</strong>";
-			
-			// IMAGE PRODUIT EXISTE PAS **********************************
-			if (($id_image=="") and ($option_image!=""))
-				{
-				$description_produit_attribut="$description_produit_attribut<br />-<br />";
-				}
-			// FIN IMAGE PRODUIT EXISTE PAS **********************************
-
-			// IMAGE EXISTE NOUVEAU SYSTEME STOCKAGE ******************************
-			if (($id_image!="") and ($option_image!=""))
-				{ 
-				if (!$fp = fopen("../../img/p/$id_product_attribute-$id_image-home.jpg","r")) 
-					{ 
-					$dossier=substr($id_image,0,1);
-					$chemin = "../../img/p/$dossier";
-					$dossier_suiv=substr($id_image,1,1);
-					if($dossier_suiv!="")
-						{
-						$chemin = "$chemin/$dossier_suiv";
-							$dossier_suiv=substr($id_image,2,1);
-							if($dossier_suiv!="")
-								{
-								$chemin = "$chemin/$dossier_suiv";
-								}
-								$dossier_suiv=substr($id_image,3,1);
-								if($dossier_suiv!="")
-									{
-									$chemin = "$chemin/$dossier_suiv";
-									}
-									$dossier_suiv=substr($id_image,4,1);
-									if($dossier_suiv!="")
-										{
-										$chemin = "$chemin/$dossier_suiv";
-										}
-										$dossier_suiv=substr($id_image,5,1);
-										if($dossier_suiv!="")
-											{
-											$chemin = "$chemin/$dossier_suiv";
-											}
-											$dossier_suiv=substr($id_image,6,1);
-											if($dossier_suiv!="")
-												{
-												$chemin = "$chemin/$dossier_suiv";
-												}
-												$dossier_suiv=substr($id_image,7,1);
-												if($dossier_suiv!="")
-													{
-													$chemin = "$chemin/$dossier_suiv";
-													}
-													$dossier_suiv=substr($id_image,8,1);
-													if($dossier_suiv!="")
-														{
-														$chemin = "$chemin/$dossier_suiv";
-														}
-														$dossier_suiv=substr($id_image,9,1);
-														if($dossier_suiv!="")
-															{
-															$chemin = "$chemin/$dossier_suiv";
-															}
-															$dossier_suiv=substr($id_image,10,1);
-															if($dossier_suiv!="")
-																{
-																$chemin = "$chemin/$dossier_suiv";
-																}
-						}
-					$chemin = str_replace( "../..", "$uri", $chemin);
-					$title =  $ref_attribut;
-					$title =  str_replace( " ", "_", $title);
-					$description_produit_attribut="$description_produit_attribut<br /><img title=$title src=$chemin/$id_image-home.jpg alt=Produit/>";
-					} 
-			// FIN IMAGE EXISTE NOUVEAU SYSTEME STOCKAGE ******************************
-			
-			// IMAGE EXISTE ANCIEN SYSTEME STOCKAGE ******************************
-			else
-				{
-				$title =  $ref_attribut;
-				$title =  str_replace( " ", "_", $title);
-				$description_produit_attribut="$description_produit_attribut<br /><img title=$title src=$uri/img/p/$id_product_attribute-$id_image-home.jpg alt=Produit/>";
-				}
-			// FIN IMAGE EXISTE ANCIEN SYSTEME STOCKAGE ******************************
-				
-				}
-			// FIN PRODUIT DECLINAISON AVEC IMAGE ***********************************************************
-
-			// PRODUIT DECLINAISON SANS IMAGE ***********************************************************            
-			if ($option_image=="")
-				{
-				$description_produit_attribut=$description_produit_attribut;
-				}
-
-			// DEFINITION ID DU PRODUIT DECLINAISON *************************************    
-			$id_product_attribut_creer="99$id_product_attribute";
-			// FIN DEFINITION ID DU PRODUIT DECLINAISON *************************************
-
-			// FIN PRODUIT DECLINAISON SANS IMAGE ***********************************************************
-
-			// RATTACHEMENT DU PRODUIT DECLINAISON A LA CATEGORIE ***************************************************
-			$sql_category_product="select * from ".$prefix_presta."category_product where id_product='".$product_id."'";
-			$result_category_product = mysql_query($sql_category_product) or die($sql_category_product."<br />\n".mysql_error());
-			while ($creer_category_product = mysql_fetch_array($result_category_product))
-				{
-				$id_category_prod=$creer_category_product['id_category'];
-				mysql_connect("$serveur_doli","$admin_doli","$mdp_doli");
-				mysql_select_db("$base_doli");
-				mysql_query("SET NAMES UTF8");
-				mysql_query ("INSERT INTO ".$prefix_doli."categorie_product (fk_categorie,fk_product) 
-					VALUES ('".$id_category_prod."','".$id_product_attribut_creer."')"); 
-				mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-				mysql_select_db("$base_presta");     
-				mysql_query("SET NAMES UTF8");
-				}
-			// FIN RATTACHEMENT DU PRODUIT DECLINAISON A LA CATEGORIE ***************************************************
-
-			$product_id=$id_product_attribut_creer;
-			$ref_produit=$ref_attribut;
-			$label_produit=$label_produit_attribut;
-			$description_produit=$description_produit_attribut;
-			$prix_produit_normal_HT=$price_attribut;
-			$prix_produit_normal_TTC=$prix_produit_normal_HT*$taux_tax_rate_product_order_detail;
-			$prix_produit_normal_TTC=sprintf("%.2f",$prix_produit_normal_TTC);
-			}
-			
-			// EXPORT PRODUIT VERS DOLIBARR *************************************************                
-			mysql_connect("$serveur_doli","$admin_doli","$mdp_doli");
-			mysql_select_db("$base_doli");
-			mysql_query("SET NAMES UTF8");
-			$info_erreur="Erreur de synchro sur : EXPORT PRODUIT VERS DOLIBARR - ID PRODUIT : $product_id - REFERENCE PRODUIT : $ref_produit";//or die($info_erreur."<br />\n".mysql_error())
-			if ($version_dolibarr>="3")
-				{
-				mysql_query ("INSERT INTO ".$prefix_doli."product (rowid,datec,tms,ref,entity,label,description,note,price,price_ttc,tva_tx,tosell,barcode,weight,finished) 
-					VALUES ($product_id,'$datec','$date_update','$product_id','$entity','$ref_produit','$ref_produit','$description_produit','$prix_produit_normal_HT','$prix_produit_normal_TTC','$tax_rate_product_normal','$active','$barcode','$weight',1)") 
-						or mysql_query ("UPDATE ".$prefix_doli."product set datec='$datec',tms='$date_update',ref='$product_id',entity='$entity',label='$ref_produit',description='$ref_produit',note='$description_produit',price='$prix_produit_normal_HT',price_ttc='$prix_produit_normal_TTC',tva_tx='$tax_rate_product_normal',tosell='$active',barcode='$barcode',weight='$weight',finished=1 where rowid=$product_id")
-							or die($info_erreur."<br />\n".mysql_error());
-				}
-			if ($version_dolibarr<"3")
-				{
-				mysql_query ("INSERT INTO ".$prefix_doli."product (rowid,datec,tms,ref,entity,label,description,note,price,price_ttc,tva_tx,envente,barcode,weight,stock) 
-					VALUES ($product_id,'$datec','$date_update','$product_id','$entity','$ref_produit','$ref_produit','$description_produit','$prix_produit_normal_HT','$prix_produit_normal_TTC','$tax_rate_product_normal','$active','$barcode','$weight',1)")  
-						or mysql_query ("UPDATE ".$prefix_doli."product set datec='$datec',tms='$date_update',ref='$product_id',entity='$entity',label='$ref_produit',description='$ref_produit',note='$description_produit',price='$prix_produit_normal_HT',price_ttc='$prix_produit_normal_TTC',tva_tx='$tax_rate_product_normal',envente='$active',barcode='$barcode',weight='$weight',stock=1 where rowid=$product_id")
-							or die($info_erreur."<br />\n".mysql_error());
-				}
-			// FIN EXPORT PRODUIT VERS DOLIBARR *************************************************
-			
-			// RATTACHEMENT DU PRODUIT AU STOCK CENTRAL *********************************************        
-			$sql_recup_verif_product_stock="select * from ".$prefix_doli."product_stock where fk_product='".$product_id."'";
-			$result_verif_product_stock = mysql_query($sql_recup_verif_product_stock) or die($sql_recup_verif_product_stock."<br />\n".mysql_error());
-			$donnees_verif_product_stock = mysql_fetch_array($result_verif_product_stock);
-			$verif_product_stock=$donnees_verif_product_stock['rowid'];
-			if ($verif_product_stock=="")
-				{
-				$info_erreur="Erreur de synchro sur : RATTACHEMENT DU PRODUIT AU STOCK CENTRAL - ID PRODUIT : $product_id";//or die($info_erreur."<br />\n".mysql_error())
-				mysql_query ("INSERT INTO ".$prefix_doli."product_stock (tms,fk_product,fk_entrepot,reel) 
-					VALUES ('$datec',$product_id,1,0)")
-						or die($info_erreur."<br />\n".mysql_error());
-				}
-			// FIN RATTACHEMENT DU PRODUIT AU STOCK CENTRAL *********************************************
 
 			// AJOUT DU PRODUIT SUR LA PROPAL **************************************
 			if ($rowid_client!="")
@@ -1492,12 +1097,12 @@ function synchroOrder($id_order)
 	echo "<script language='JavaScript'>alert('$echo')</script>";   
 	echo '<SCRIPT>javascript:window.close()</SCRIPT>';
 	// FIN AFFICHAGE ****************************************************
-
+*/
 }
 
 if (Tools::isSubmit('id_order'))
 {
-    $id_order=Tools::getValue('id_ordermer');
+    $id_order=Tools::getValue('id_order');
     synchroOrder($id_order);
 }
 

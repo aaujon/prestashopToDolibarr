@@ -3,11 +3,16 @@
 
 class DolibarrOrderLines {
     public $id;
-	public $type; // nom
+	public $type;
+    public $fk_commande;
+    public $fk_parent_line;
 	public $desc;
-    public $vate_rate;
     public $qty;
+    public $price;
     public $unitprice;
+    public $vat_rate;
+    public $remise;
+    public $remise_percent;
     public $total_net;
     public $total_vat;
     public $total;
