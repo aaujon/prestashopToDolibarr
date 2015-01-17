@@ -53,6 +53,7 @@ class prestashopToDolibarr extends Module {
                 $prefix_ref_client = Tools::getValue('prefix_ref_client');
                 $client_status = Tools::getValue('client_status');
                 $prefix_ref_product = Tools::getValue('prefix_ref_product');                                          
+                $product_description = Tools::getValue('product_description');                                          
                
                 Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
                 Configuration::updateValue('dolibarr_key', $dolibarr_key);
@@ -67,6 +68,7 @@ class prestashopToDolibarr extends Module {
                 Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
                 Configuration::updateValue('client_status', $client_status);
                 Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
+                Configuration::updateValue('product_description', $product_description);
                 //Configuration::updateValue('option_image', $option_image);
                 //Configuration::updateValue('decremente', $decremente);
                 //Configuration::updateValue('stock_doli', $stock_doli);
@@ -201,7 +203,7 @@ class prestashopToDolibarr extends Module {
 
         $fields_form[1]['form'] = array(
             'legend' => array(
-                'title' => $this->l('Module settings'),
+                'title' => $this->l('Client synchronisation settings'),
             ),
             'input' => array(
                 array(
@@ -218,7 +220,7 @@ class prestashopToDolibarr extends Module {
                   'name' => 'client_status',                     // The content of the 'id' attribute of the <select> tag.
                   'required' => true,                              // If set to true, this option must be set.
                   'options' => array(
-                    'query' => array(
+                   'query' => array(
                                   array(
                                     'id_option' => 0,
                                     'name' => 'Closed'
@@ -228,8 +230,8 @@ class prestashopToDolibarr extends Module {
                                     'name' => 'In activity'
                                   ),
                                 ),                           // $options contains the data itself.
-                    'id' => 'id_option',                           // The value of the 'id' key must be the same as the key for 'value' attribute of the <option> tag in each $options sub-array.
-                    'name' => 'name'                               // The value of the 'name' key must be the same as the key for the text content of the <option> tag in each $options sub-array.
+                   'id' => 'id_option',                           // The value of the 'id' key must be the same as the key for 'value' attribute of the <option> tag in each $options sub-array.
+                   'name' => 'name'
                   )
                 ),
                 array(
@@ -238,6 +240,35 @@ class prestashopToDolibarr extends Module {
                     'name' => 'prefix_ref_product',
                     'size' => 33,
                     'required' => false
+                )
+            )
+        );
+        
+        $fields_form[2]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Product synchronisation settings'),
+            ),
+            'input' => array(
+                array(
+                  'type' => 'select',
+                  'label' => $this->l('Dolibarr product description'),
+                  'desc' => $this->l('Product description to use in dolibarr'),
+                  'name' => 'product_description',
+                  'required' => true,
+                  'options' => array(
+                  'query' => array(
+                                  array(
+                                    'id_option' => 0,
+                                    'name' => 'Short description'
+                                  ),
+                                  array(
+                                    'id_option' => 1,
+                                    'name' => 'Full description'
+                                  ),
+                                ),                           // $options contains the data itself.
+                  'id' => 'id_option',
+                  'name' => 'name'
+                  )
                 )
             )
         );
@@ -281,6 +312,8 @@ class prestashopToDolibarr extends Module {
         $helper->fields_value['client_status'] = Configuration::get('client_status');
         $helper->fields_value['prefix_ref_client'] = Configuration::get('prefix_ref_client');
         $helper->fields_value['prefix_ref_product'] = Configuration::get('prefix_ref_product');
+        $helper->fields_value['product_description'] = Configuration::get('product_description');
+
          
         return $helper->generateForm($fields_form);
     }

@@ -7,8 +7,8 @@ include('dolibarr/DolibarrApi.php');
 
 function synchroProduct($id_product)
 {
-    $code_article_port = Configuration::get('code_article_port');
-    $option_image = Configuration::get('option_image');
+    $product_description = Configuration::get('product_description');
+    var_dump($product_description);
 
     if ($product = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."product where id_product = '".$id_product."'"))
     {
@@ -23,29 +23,32 @@ function synchroProduct($id_product)
         $reference=produits_caract("$reference");
         $en_vente=$product['active'];
         $barcode=$product['ean13'];
-        $datec=$product['date_add'];
-        $tms=$product['date_upd'];
+        //$datec=$product['date_add'];
+        //$tms=$product['date_upd'];
         //$weight=$product['weight'];
      
         // find tva rate  
         $id_tax_rules_group=$product['id_tax_rules_group'];
-        var_dump($id_tax_rules_group);
-        $donnees_id_tax_rules_group = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."tax_rule where id_tax_rules_group = '".$id_tax_rules_group."' limit 1");
-        var_dump($donnees_id_tax_rules_group);
+        //var_dump($id_tax_rules_group);
+        $donnees_id_tax_rules_group = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."tax_rule where id_tax_rules_group = '".$id_tax_rules_group."'");
+        //var_dump($donnees_id_tax_rules_group);
         $id_tax=$donnees_id_tax_rules_group['id_tax'];
-        var_dump($id_tax);
+        //var_dump($id_tax);
         $donnees_tax = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."tax where id_tax = '".$id_tax."'");
-        $tax_rate_product_normal=$donnees_tax['rate'];
-        var_dump($tax_rate_product_normal);
-        $taux_taxe_produits_normal=$tax_rate_product_normal/100;
-        $taux_taxe_produits_normal=$taux_taxe_produits_normal+1;
-        $taux_taxe_produits_normal=sprintf("%.2f",$taux_taxe_produits_normal);
+        $vat_rate=$donnees_tax['rate'];
+        echo "vat_rate : $vat_rate";
         $prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
 
         //find description
-        $product_description = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."product_lang where id_product = '".$id_product."' AND id_lang = '".Context::getContext()->language->id."'");
-        $description = $product_description['description'];
-        $label = $product_description['name'];
+		$product_data = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."product_lang where id_product = '".$id_product."' AND id_lang = '".Context::getContext()->language->id."'");
+
+		if ($product_description == '0') {
+			$description = $product_data['description_short'];
+		} else {
+			$description = $product_data['description'];
+		}
+
+        $label = $product_data['name'];
         // RECUPERATION DES DONNEES DU PRODUIT DANS LA BASE ARTICLES *********************************************
 
         // RECUPERATION ID IMAGE ****************************************************
@@ -65,8 +68,7 @@ function synchroProduct($id_product)
         $product->label = $label;
 		$product->description = $description;
 		$product->price_net = $prix_produit_normal_HT;
-		$product->vat_rate = $taux_taxe_produits_normal;
-		$product->date_modification = new DateTime('NOW');
+		$product->vat_rate = $vat_rate;
 
 		if ($exists["result"]->result_code == 'NOT_FOUND')
         {
