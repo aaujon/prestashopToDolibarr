@@ -3,9 +3,9 @@
 
 class DolibarrOrderLines {
     public $id;
-	public $type;
-    public $fk_commande;
-    public $fk_parent_line;
+	public $type = 0; // 0 regular product, 1 service
+    public $fk_commande; // don't use
+    public $fk_parent_line; // don't use
 	public $desc;
     public $qty;
     public $price;
@@ -19,9 +19,9 @@ class DolibarrOrderLines {
 	public $date_start = ""; // dateTime
 	public $date_end = ""; // dateTime
 	public $product_id = "";
-	public $product_ref = "";
-	public $product_label = "";
-	public $product_desc = "";
+	public $product_ref = ""; // don't use
+	public $product_label = ""; // don't use
+	public $product_desc = ""; // don't use
 }
 
 class DolibarrOrder {
@@ -31,31 +31,33 @@ class DolibarrOrder {
 	public $ref_ext;
 	public $ref_int;
     public $thirdparty_id;
+    public $facturee; // don't use deprecated
+    public $billed = 0; // 0 = no, 1 = yes
 	public $status = 1; // -1=Canceled, 0=Draft, 1=Validated, (2=Accepted/On process not managed for customer orders), 3=Closed (Sent/Received, billed or not)
-	public $facturee;
-	public $total_net;
-    public $total_vat;
-    public $total_localtax1;
-    public $total_localtax2;
-    public $total;
+	
+	public $total_net; // don't use deprecated
+    public $total_vat; // don't use deprecated
+    public $total_localtax1; // don't use deprecated
+    public $total_localtax2; // don't use deprecated
+    public $total; // don't use deprecated
     public $date = ""; // dateTime
-	public $date_creation = ""; // dateTime
-	public $date_validation = ""; // dateTime
-	public $date_modification = ""; // dateTime
+	public $date_creation = ""; // don't use deprecated
+	public $date_validation = ""; // don't use deprecated
+	public $date_modification = ""; // don't use deprecated
 	public $remise;
 	public $remise_percent;
 	public $remise_absolue;
-	public $source;
+	public $source = "Prestashop";
 	public $note_private = "Synchronised from Prestashop";
     public $note_public = "";
     public $project_id = "";
     public $mode_reglement_id;
-    public $mode_reglement_code;
-    public $mode_reglement;
+    public $mode_reglement_code; // don't use deprecated
+    public $mode_reglement; // don't use deprecated
     public $cond_reglement_id;
-    public $cond_reglement_code;
-    public $cond_reglement;
-    public $cond_reglement_doc;
+    public $cond_reglement_code; // don't use deprecated
+    public $cond_reglement; // don't use deprecated
+    public $cond_reglement_doc; // don't use deprecated
     public $date_livraison; //dateTime
     public $fk_delivery_address;
     public $demand_reason_id;

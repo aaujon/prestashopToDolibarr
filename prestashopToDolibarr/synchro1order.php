@@ -20,9 +20,6 @@ function synchroOrder($id_order)
 	$fk_mode_reglement=6;
 	$source=1;
 	$fk_cond_reglement_commande=1;
-	$model_pdf='azur';
-	$model_pdf_facture='oursin';
-	$model_pdf_commande="einstein";
 	$type_doli=2;
 	$active=1;
 	// FIN DEFINITION DE DONNEES *****************************************
@@ -91,22 +88,26 @@ function synchroOrder($id_order)
 			break;
 		//** En cours de préparation
 		case 3:
-			$order_status = 2;           //** Commande en Envoi en cours (mais pas encore expédiée)
+			$order_status = 1; // due to current dolibarr limitation using webservices
+			//$order_status = 2;           //** Commande en Envoi en cours (mais pas encore expédiée)
 			break;
 		// in delivery
 		case 4: 
-			$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			$order_status = 1; // due to current dolibarr limitation using webservices
+			//$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
 			break;
 		// delivered
 		case 5:
 		case 35:
 		case 37:
-			$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			$order_status = 1; // due to current dolibarr limitation using webservices
+			//$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
 			break;
 		// cancelled or refund
 		case 6:
 		case 7:
-			$order_status='-1';        // canceled
+			$order_status = 0; // due to current dolibarr limitation using webservices
+			//$order_status='-1';        // canceled
 			break;
 		// paiement error or not validated
 		case 8: 
@@ -402,21 +403,24 @@ function synchroOrder($id_order)
 		$line->unitprice = $product['unit_price_tax_excl'];
 		$line->remise = $product['reduction_amount'];
 		$line->remise_percent = $product['reduction_percent'];
-		$line->total_net = $product['total_price_tax_incl'];
-		$line->total_vat = $product['total_price_tax_excl'];
-
-		$line->product_id = $product['product_name'];
-		$line->product_ref = $product['product_name'];
-
-		$line->product_label = $product['product_name'];
-		$line->product_desc = "";
-
+		$line->total_net = $product['total_price_tax_excl'];
+		$line->total = $product['total_price_tax_incl'];
+		$line->total_vat = 	sprintf("%.2f", $product['total_price_tax_incl'] - $product['total_price_tax_excl']);
+		
+		// vat_rate isn't set properly on order_detail so compute it...
+		$line->vat_rate = sprintf("%.1f", ($product['total_price_tax_incl'] - $product['total_price_tax_excl'])/$product['total_price_tax_excl']*100);
+		if ($line->vat_rate > 19.8 && $line->vat_rate < 20.2) {
+			$line->vat_rate = 20;
+		}else if ($line->vat_rate > 9.8 && $line->vat_rate < 10.2) {
+			$line->vat_rate = 10;
+		}
 		/*public $id;
 		public $type;
+		
 
 		public $vat_rate;
 
-		public $total;
+		
 		public $date_start = ""; // dateTime
 		public $date_end = ""; // dateTime*/
 		
@@ -449,8 +453,9 @@ function synchroOrder($id_order)
 		$dolibarrOrder->date_livraison = $order['delivery_date'];
 	}
 	$dolibarrOrder->status = $order_status;
+	/*$dolibarrOrder->total = $total;
     $dolibarrOrder->total_net = $total_net;
-	$dolibarrOrder->date_modification = new DateTime('NOW');
+    $dolibarrOrder->total_vat = $total_v;*/
 	$dolibarrOrder->lines = $lines;
 
 	if ($exists["result"]->result_code == 'NOT_FOUND')
@@ -464,6 +469,9 @@ function synchroOrder($id_order)
 		}
 	} else
     {
+		echo "Can't update order, dolibarr 3.6 webservice is bugged. Fixed in 3.7";
+		return;
+		/*
 		// Update order
 		echo "update order<br>";
 		$oldOrder = $exists["order"];
@@ -473,47 +481,9 @@ function synchroOrder($id_order)
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
 		}
+		*/
 	}	
-	
-/*
-	// DETERMINATION ID FACTURE DOLIBARR *******************************************
-	$req_id_facture="select max(rowid) from ".$prefix_doli."facture";
-	$req_id_facture=mysql_query($req_id_facture);
-	$id_facture=mysql_result($req_id_facture,0,"max(rowid)");
-	$id_facture=$id_facture+1;
-	$sql_recup_verif_facture="select * from ".$prefix_doli."facture where total_ttc='$total_a_payer_TTC' and datec ='".$dateorder."'";
-	$result_verif_facture = mysql_query($sql_recup_verif_facture) or die($sql_recup_verif_facture."<br />\n".mysql_error());
-	$donnees_verif_facture = mysql_fetch_array($result_verif_facture);
-	$verif_facture=$donnees_verif_facture['ref_client'];
-	if ($verif_facture!="")
-		{
-		$rowid_facture=$donnees_verif_facture['rowid'];
-		// CREATION DE LA REFERENCE FACTURE *************************************************
-		$ref_facture=$donnees_verif_facture['facnumber'];
-		// FIN CREATION DE LA REFERENCE FACTURE *************************************************
-		}
-	if ($verif_facture=="")
-		{
-		$rowid_facture=$id_facture;
-		// CREATION DE LA REFERENCE FACTURE *************************************************
-		$req_dernier_id="select max(rowid) from ".$prefix_doli."facture order by facnumber asc";
-		$req_dernier_id=mysql_query($req_dernier_id);
-		$dernier_id=mysql_result($req_dernier_id,0,"max(rowid)");
-		$sql_derniere_ref = Db::getInstance()->GetRow("select * from ".$prefix_doli."facture where rowid='$dernier_id'");
-		$derniere_ref=$sql_derniere_ref['facnumber'];
-		$verif_chrono=substr($derniere_ref,0,2);
-		$chrono=substr($derniere_ref,7,4);
-		$chrono=$chrono+1;
-		$chrono_nnnn=str_pad($chrono, 4, "0", STR_PAD_LEFT);
-		$annee=substr($date_facture,2,2);
-		$mois=substr($date_facture,5,2);
-		$ref="$annee";
-		$ref="$ref$mois-";
-		$ref="FA$ref$chrono_nnnn";
-		}
-		// FIN CREATION DE LA REFERENCE FACTURE *************************************************
-	// FIN DETERMINATION ID FACTURE DOLIBARR *******************************************
-
+	/*
 	// CREATION DE LA FACTURE *********************************************************
 	if ($rowid_client!="")
 		{
@@ -645,297 +615,6 @@ function synchroOrder($id_order)
 		} 
 	// FIN ECRITURE DU PAIEMENT SI POSSIBLE ***********************************************************
 
-	// ECRITURE RAPPROCHEE SI POSSIBLE **********************************************************
-	if ($create_invoice)
-		{    
-		
-		$info_erreur="Erreur de synchro sur : ECRITURE RAPPROCHEE - EMETTEUR PAIEMENT : $emetteur_paiement";//or die($info_erreur."<br />\n".mysql_error())
-		mysql_query ("INSERT INTO ".$prefix_doli."bank (rowid,datec,datev,dateo,amount,label,fk_account,num_releve,rappro,fk_type,banque,emetteur) 
-			VALUES ('$rowid_bank','$dateorder','$dateorder','$dateorder','$total_paid_real_TTC','(CustomerInvoicePayment)','$id_bank_account','$num_releve',1,'VAD',0,'$emetteur_paiement')") 
-				Or mysql_query ("UPDATE ".$prefix_doli."bank set datec='$dateorder',datev='$dateorder',dateo='$dateorder',amount='$total_paid_real_TTC',label='(CustomerInvoicePayment)',num_releve='".$num_releve."',rappro=1,fk_type='VAD',banque=0,emetteur='$emetteur_paiement' where rowid='".$rowid_bank."'")
-					or die($info_erreur."<br />\n".mysql_error());
-		
-		$info_erreur="Erreur de synchro sur : ECRITURE RAPPROCHEE bank_url 1 - EMETTEUR PAIEMENT : $emetteur_paiement";//or die($info_erreur."<br />\n".mysql_error())
-		mysql_query ("INSERT INTO ".$prefix_doli."bank_url (fk_bank,url_id,url,label,type) 
-			VALUES ('$rowid_bank','$rowid_paiement','/_doli/htdocs/compta/paiement/fiche.php?id=','(paiement)','payment')") 
-				Or mysql_query ("UPDATE ".$prefix_doli."bank_url set url='/_doli/htdocs/compta/paiement/fiche.php?id=',label='(paiement)',type='payment' where fk_bank='".$rowid_bank."' and url_id='".$rowid_paiement."'")
-					or die($info_erreur."<br />\n".mysql_error());
-
-		$info_erreur="Erreur de synchro sur : ECRITURE RAPPROCHEE bank_url 2 - EMETTEUR PAIEMENT : $emetteur_paiement";//or die($info_erreur."<br />\n".mysql_error())
-		mysql_query ("INSERT INTO ".$prefix_doli."bank_url (fk_bank,url_id,url,label,type) 
-			VALUES ('$rowid_bank','$rowid_client','/_doli/htdocs/comm/fiche.php?socid=','$emetteur_paiement','company')") 
-				Or mysql_query ("UPDATE ".$prefix_doli."bank_url set url='/_doli/htdocs/comm/fiche.php?socid=',label='$emetteur_paiement',type='company' where fk_bank='".$rowid_bank."' and url_id='".$rowid_client."'")
-					or die($info_erreur."<br />\n".mysql_error());
-		
-		$sql_recup_verif_bank_class="select * from ".$prefix_doli."bank_class where lineid='".$rowid_bank."'";
-		$result_verif_bank_class= mysql_query($sql_recup_verif_bank_class) or die($sql_recup_verif_bank_class."<br />\n".mysql_error());
-		$donnees_verif_bank_class = mysql_fetch_array($result_verif_bank_class);
-		$verif_bank_class=$donnees_verif_bank_class['fk_categ'];
-		if ($verif_bank_class=="")
-			{
-			$info_erreur="Erreur de synchro sur : ECRITURE RAPPROCHEE INSERT bank_class - EMETTEUR PAIEMENT : $emetteur_paiement";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("INSERT INTO ".$prefix_doli."bank_class (lineid,fk_categ) 
-				VALUES ('$rowid_bank','$id_bank_categ')")
-					or die($info_erreur."<br />\n".mysql_error());
-			}
-		if ($verif_bank_class!="")
-			{
-			$info_erreur="Erreur de synchro sur : ECRITURE RAPPROCHEE UPDATE bank_class - EMETTEUR PAIEMENT : $emetteur_paiement";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("UPDATE ".$prefix_doli."bank_class set fk_categ='$id_bank_categ' where lineid='".$rowid_bank."'")
-				or die($info_erreur."<br />\n".mysql_error());
-			}
-		}
-	// FIN ECRITURE RAPPROCHEE SI POSSIBLE **********************************************************
-
-	// VERIFICATION DES LIENS ENTRE LE PAIEMENT, BANQUE,FACTURE et LE CLIENT *********************************************************µ
-	if ($rowid_client!="")
-		{
-		$info_erreur="Erreur de synchro sur : VERIFICATION DES LIENS ENTRE LE PAIEMENT, BANQUE,FACTURE et LE CLIENT - ID FACTURE : $rowid_facture - ID PAIEMENT : $rowid_paiement - EMETTEUR PAIEMENT : $emetteur_paiement";//or die($info_erreur."<br />\n".mysql_error())
-		mysql_query ("UPDATE ".$prefix_doli."paiement_facture set fk_facture='$rowid_facture',amount='$total_paid_real_TTC' where rowid='".$rowid_paiement."'")
-			or die($info_erreur."<br />\n".mysql_error());
-		}
-	// FIN VERIFICATION DES LIENS ENTRE LE PAIEMENT, BANQUE,FACTURE et LE CLIENT *********************************************************µ
-
-	// INSERTION DU DETAIL DE LA COMMANDE ******************************************************************
-	mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-	mysql_select_db("$base_presta");
-	mysql_query("SET NAMES UTF8");
-	$sql_detail="select * from ".$prefix_presta."order_detail where id_order='".$id_order."'";
-	$result_detail = mysql_query($sql_detail) or die($sql_detail."<br />\n".mysql_error()); 
-	while ($donnees = mysql_fetch_assoc($result_detail) ) 
-		{
-		$rang=$rang+1;
-		$product_id=$donnees['product_id'];
-		$product_attribute_id=$donnees['product_attribute_id'];
-		$product_name_order = $donnees['product_name'];
-		$rowid_existe_plus=$donnees['product_id'];
-		$product_name_existe_plus=$donnees['product_name'];
-		$product_reference_existe_plus=$donnees['product_reference'];
-		$barcode_commande=$donnees['product_ean13'];
-		$reduction_amount=$donnees['reduction_amount'];
-		$qty_article=$donnees['product_quantity'];
-		$qty_article=sprintf("%.2f",$qty_article);
-		
-		// CALCUL DU PRIX DU PRODUIT SUR LA COMMANDE **********************************************
-		$donnees_product_order_detail = Db::getInstance()->GetRow("select * from ".$prefix_presta."order_detail where id_order = '".$id_order."' and product_id = '".$product_id."'");
-		if ($version_presta<"1.5")     	       
-			{
-			$unit_price_tax_excl_product_order_detail = $donnees_product_order_detail['product_quantity_discount'];
-			if ($unit_price_tax_excl_product_order_detail=="0.000000")
-				{
-				$unit_price_tax_excl_product_order_detail = $donnees_product_order_detail['product_price'];
-				$unit_price_tax_excl_product_order_detail=sprintf("%.2f",$unit_price_tax_excl_product_order_detail);
-				}
-			$unit_price_tax_excl_product_order_detail=sprintf("%.2f",$unit_price_tax_excl_product_order_detail);
-			$tax_rate_product_order_detail = $donnees_product_order_detail['tax_rate'];
-			$tax_rate_product_order_detail=sprintf("%.2f",$tax_rate_product_order_detail);
-			}                            
-		if ($version_presta>="1.5")     	
-			{
-			$unit_price_tax_excl_product_order_detail = $donnees_product_order_detail['unit_price_tax_excl'];
-			$unit_price_tax_excl_product_order_detail=sprintf("%.2f",$unit_price_tax_excl_product_order_detail);
-			$donnees_tax_rate_product = Db::getInstance()->GetRow("select * from ".$prefix_presta."product where id_product='".$product_id."'");
-			$id_tax_rules_group=$donnees_tax_rate_product['id_tax_rules_group'];
-			$donnees_id_tax_rules_group = Db::getInstance()->GetRow("select * from ".$prefix_presta."tax_rule where id_tax_rules_group='".$id_tax_rules_group."'");
-			$id_tax=$donnees_id_tax_rules_group['id_tax'];
-			$donnees_product_order_detail = Db::getInstance()->GetRow("select * from ".$prefix_presta."tax where id_tax='".$id_tax."'");
-			$tax_rate_product_order_detail = $donnees_product_order_detail['rate'];
-			$tax_rate_product_order_detail=sprintf("%.2f",$tax_rate_product_order_detail);
-			}
-		$taux_tax_rate_product_order_detail=$tax_rate_product_order_detail/100;
-		$taux_tax_rate_product_order_detail=$taux_tax_rate_product_order_detail+1;
-		$taux_tax_rate_product_order_detail=sprintf("%.2f",$taux_tax_rate_product_order_detail);
-		
-		$unit_price_tax_incl_product_order_detail = $unit_price_tax_excl_product_order_detail*$taux_tax_rate_product_order_detail;
-		$unit_price_tax_incl_product_order_detail=sprintf("%.2f",$unit_price_tax_incl_product_order_detail);
-		
-		$tva_unit_price_product_order_detail=$unit_price_tax_incl_product_order_detail-$unit_price_tax_excl_product_order_detail;
-		$tva_unit_price_product_order_detail=sprintf("%.2f",$tva_unit_price_product_order_detail);
-		
-		$reduction_amount=$reduction_amount/$taux_tax_rate_product_order_detail;
-		
-		$unit_price_tax_excl_product_order_detail=$unit_price_tax_excl_product_order_detail-$reduction_amount;
-		$unit_price_tax_excl_product_order_detail=sprintf("%.2f",$unit_price_tax_excl_product_order_detail);
-		
-		$unit_price_tax_incl_product_order_detail=$unit_price_tax_excl_product_order_detail*$taux_tax_rate_product_order_detail;
-		$unit_price_tax_incl_product_order_detail=sprintf("%.2f",$unit_price_tax_incl_product_order_detail);
-		
-		$total_article_ht=$unit_price_tax_excl_product_order_detail*$qty_article;
-		$total_article_ht=sprintf("%.2f",$total_article_ht);
-		
-		$total_ttc_article=$unit_price_tax_incl_product_order_detail*$qty_article;
-		$total_ttc_article=sprintf("%.2f",$total_ttc_article);
-		
-		$total_tva_article=$total_ttc_article-$total_article_ht;
-		$total_tva_article=sprintf("%.2f",$total_tva_article);                                                             
-		// FIN CALCUL DU PRIX DU PRODUIT SUR LA COMMANDE **********************************************
-
-			// AJOUT DU PRODUIT SUR LA PROPAL **************************************
-			if ($rowid_client!="")
-				{
-				$sql_recup_verif_art_propal="select * from ".$prefix_doli."propaldet where fk_propal=$rowid_propal and fk_product=$product_id";
-				$result_verif_art_propal = mysql_query($sql_recup_verif_art_propal) or die($sql_recup_verif_art_propal."<br />\n".mysql_error());
-				$donnees_verif_art_propal = mysql_fetch_array($result_verif_art_propal);
-				$verif_art_propal=$donnees_verif_art_propal['fk_product'];
-				if ($verif_art_propal==$product_id)
-					{
-					$info_erreur="Erreur de synchro sur : UPDATE DU PRODUIT SUR LA PROPAL - ID PROPAL : $rowid_propal - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order";//or die($info_erreur."<br />\n".mysql_error())
-					mysql_query ("UPDATE ".$prefix_doli."propaldet set description='$product_name_order',tva_tx='$tax_rate_product_order_detail',qty='$qty_article',price='$unit_price_tax_excl_product_order_detail',subprice='$unit_price_tax_excl_product_order_detail',total_ht='$total_article_ht',total_tva='$total_tva_article',total_ttc='$total_ttc_article' where fk_propal=$rowid_propal and fk_product=$product_id")
-						or die($info_erreur."<br />\n".mysql_error());  
-					}
-				else
-					{
-					$info_erreur="Erreur de synchro sur : INSERT DU PRODUIT SUR LA PROPAL - ID PROPAL : $rowid_propal - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order";//or die($info_erreur."<br />\n".mysql_error())
-					mysql_query ("INSERT INTO ".$prefix_doli."propaldet (fk_propal,fk_product,description,tva_tx,qty,price,subprice,total_ht,total_tva,total_ttc,rang) 
-						values ($rowid_propal,'$product_id','$product_name_order','$tax_rate_product_order_detail','$qty_article','$unit_price_tax_excl_product_order_detail','$unit_price_tax_excl_product_order_detail','$total_article_ht','$total_tva_article','$total_ttc_article','$rang')")
-							or die($info_erreur."<br />\n".mysql_error());
-					}
-				}
-			// FIN AJOUT DU PRODUIT SUR LA PROPAL **************************************
-				
-			// AJOUT DU PRODUIT SUR LA COMMANDE **************************************
-			if ($rowid_client!="")
-				{
-				$sql_recup_verif_art_commande="select * from ".$prefix_doli."commandedet where 	fk_commande=$rowid_commande and fk_product=$product_id";
-				$result_verif_art_commande = mysql_query($sql_recup_verif_art_commande) or die($sql_recup_verif_art_commande."<br />\n".mysql_error());
-				$donnees_verif_art_commande = mysql_fetch_array($result_verif_art_commande);
-				$verif_art_commande=$donnees_verif_art_commande['fk_product'];      
-				if ($verif_art_commande!=$product_id)
-					{
-					$info_erreur="Erreur de synchro sur : INSERT DU PRODUIT SUR LA COMMANDE - ID COMMANDE : $rowid_commande - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order";//or die($info_erreur."<br />\n".mysql_error())
-					mysql_query ("INSERT INTO ".$prefix_doli."commandedet (	fk_commande,fk_product,description,tva_tx,qty,price,subprice,total_ht,total_tva,total_ttc,rang) 
-						values ($rowid_commande,'$product_id','$product_name_order','$tax_rate_product_order_detail','$qty_article','$unit_price_tax_excl_product_order_detail','$unit_price_tax_excl_product_order_detail','$total_article_ht','$total_tva_article','$total_ttc_article','$rang')")
-							or die($info_erreur."<br />\n".mysql_error());
-					
-					// DECREMENTE LE STOCK DOLIBARR DU PRODUIT *******************************************
-					if ($decremente=="checked")
-						{
-						$info_erreur="Erreur de synchro sur : DECREMENTE LE STOCK DOLIBARR DU PRODUIT - ID COMMANDE : $rowid_commande - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order - QUANTITE DU PRODUIT : $qty_article";//or die($info_erreur."<br />\n".mysql_error())
-						mysql_query("UPDATE ".$prefix_doli."product_stock set reel=reel-'$qty_article' where fk_product='".$product_id."'")
-							or die($info_erreur."<br />\n".mysql_error());
-						}
-					// FIN DECREMENTE LE STOCK DOLIBARR DU PRODUIT *******************************************
-					
-					}
-				else
-					{
-					$info_erreur="Erreur de synchro sur : UPDATE DU PRODUIT SUR LA COMMANDE - ID COMMANDE : $rowid_commande - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order";//or die($info_erreur."<br />\n".mysql_error())
-					mysql_query ("UPDATE ".$prefix_doli."commandedet set description='$product_name_order',tva_tx='$tax_rate_product_order_detail',qty='$qty_article',price='$unit_price_tax_excl_product_order_detail',subprice='$unit_price_tax_excl_product_order_detail',total_ht='$total_article_ht',total_tva='$total_tva_article',total_ttc='$total_ttc_article' where fk_commande=$rowid_commande and fk_product=$product_id")
-						or die($info_erreur."<br />\n".mysql_error());  
-					}
-				}
-			// FIN AJOUT DU PRODUIT SUR LA COMMANDE **************************************
-				
-			// AJOUT DU PRODUIT SUR LA FACTURE **************************************
-			if ($rowid_client!="")
-				{
-				if ($create_invoice)
-					{
-					$sql_recup_verif_art_facture="select * from ".$prefix_doli."facturedet where 	fk_facture=$rowid_facture and fk_product=$product_id";
-					$result_verif_art_facture = mysql_query($sql_recup_verif_art_facture) or die($sql_recup_verif_art_facture."<br />\n".mysql_error());
-					$donnees_verif_art_facture = mysql_fetch_array($result_verif_art_facture);
-					$verif_art_facture=$donnees_verif_art_facture['fk_product'];      
-					if ($verif_art_facture!=$product_id)
-						{
-						$info_erreur="Erreur de synchro sur : INSERT DU PRODUIT SUR LA FACTURE - ID FACTURE : $rowid_facture - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order";//or die($info_erreur."<br />\n".mysql_error())
-						mysql_query ("INSERT INTO ".$prefix_doli."facturedet (fk_facture,fk_product,description,tva_tx,qty,subprice,price,total_ht,total_tva,total_ttc,rang) 
-							values ($rowid_facture,'$product_id','$product_name_order','$tax_rate_product_order_detail','$qty_article','$unit_price_tax_excl_product_order_detail','$unit_price_tax_excl_product_order_detail','$total_article_ht','$total_tva_article','$total_ttc_article','$rang')")
-								or die($info_erreur."<br />\n".mysql_error()); 
-						}
-					else
-						{
-						$info_erreur="Erreur de synchro sur : UPDATE DU PRODUIT SUR LA FACTURE - ID FACTURE : $rowid_facture - ID PRODUIT : $product_id - NOM DU PRODUIT : $product_name_order";//or die($info_erreur."<br />\n".mysql_error())
-						mysql_query ("UPDATE ".$prefix_doli."facturedet set description='$product_name_order',tva_tx='$tax_rate_product_order_detail',qty='$qty_article',subprice='$unit_price_tax_excl_product_order_detail',price='$unit_price_tax_excl_product_order_detail',total_ht='$total_article_ht',total_tva='$total_tva_article',total_ttc='$total_ttc_article' where fk_facture=$rowid_facture and fk_product=$product_id")
-							or die($info_erreur."<br />\n".mysql_error());  
-						}
-				// FIN AJOUT DU PRODUIT SUR LA FACTURE **************************************
-		
-				// AJOUT DU PRODUIT SUR UNE COMMANDE FOURNISSEUR PROVISOIRE *********************************************
-				if ($ajoutcdefourn=="oui")
-					{
-					if (($tax_rate_product_normal=="0") or ($tax_rate_product_normal==""))
-						{
-						$tax_rate_product_cde_four="19.6";
-						}
-					if (($tax_rate_product_normal!="0") and ($tax_rate_product_normal!=""))
-						{
-						$tax_rate_product_cde_four=$tax_rate_product_normal;
-						}
-					$req_id_projet="select max(rowid) from ".$prefix_doli."projet";
-					$req_id_projet=mysql_query($req_id_projet);
-					$id_projet=mysql_result($req_id_projet,0,"max(rowid)");
-					$sql_recup_projet="select * from ".$prefix_doli."projet where title='REAPPROVISIONNEMENT'";
-					$result_projet = mysql_query($sql_recup_projet) or die($sql_recup_projet."<br />\n".mysql_error());
-					$donnees_projet = mysql_fetch_array($result_projet);
-					$verif_id_projet=$donnees_projet['rowid'];
-					if ($verif_id_projet!="")
-						{
-						$id_projet=$donnees_projet['rowid'];
-						}
-					if ($verif_id_projet=="")
-						{
-						$id_projet=$id_projet+1;
-						mysql_query ("INSERT INTO ".$prefix_doli."projet (rowid,ref,entity,title,description) 
-							VALUES ('$id_projet','REAPPROVISIONNEMENT',1,'REAPPROVISIONNEMENT','REAPPROVISIONNEMENT') ON DUPLICATE KEY UPDATE ref='REAPPROVISIONNEMENT'");
-						}
-					$sql_recup_id_fournisseur="select * from ".$prefix_doli."societe where nom='$nom_fournisseur'";
-					$result_id_fournisseur= mysql_query($sql_recup_id_fournisseur) or die($sql_recup_id_fournisseur."<br />\n".mysql_error());
-					$donnees_id_fournisseur = mysql_fetch_array($result_id_fournisseur);
-					$id_fourniss=$donnees_id_fournisseur['rowid'];
-					$sql_recup_commande_fourn_prov="select * from ".$prefix_doli."commande_fournisseur where fk_soc='$id_fourniss' and fk_projet!='$id_projet' and fk_statut=0";
-					$result_commande_fourn_prov= mysql_query($sql_recup_commande_fourn_prov) or die($sql_recup_commande_fourn_prov."<br />\n".mysql_error());
-					$donnees_commande_fourn_prov = mysql_fetch_array($result_commande_fourn_prov);
-					$id_commande_fourn_prov=$donnees_commande_fourn_prov['rowid'];
-					if ($id_commande_fourn_prov=="")
-						{
-						$req_id_commande_fourn_prov="select max(rowid) from ".$prefix_doli."commande_fournisseur";
-						$req_id_commande_fourn_prov=mysql_query($req_id_commande_fourn_prov);
-						$id_commande_fourn_prov=mysql_result($req_id_commande_fourn_prov,0,"max(rowid)");
-						$id_commande_fourn_prov=$id_commande_fourn_prov+1;
-						$ref_cde_fourn_prov='(PROV'.$id_commande_fourn_prov.')';
-						mysql_query ("INSERT INTO ".$prefix_doli."commande_fournisseur (rowid,fk_soc,ref,entity,date_creation,date_commande,fk_user_author,model_pdf) 
-							values ('$id_commande_fourn_prov','$id_fourniss','$ref_cde_fourn_prov',1,'$date_commande','$date_commande',2,'muscadet')");
-						} 
-					$sql_recup_commande_fourn_prov="select * from ".$prefix_doli."commande_fournisseur where fk_soc='$id_fourniss' and fk_projet!='$id_projet' and fk_statut=0";
-					$result_commande_fourn_prov= mysql_query($sql_recup_commande_fourn_prov) or die($sql_recup_commande_fourn_prov."<br />\n".mysql_error());
-					$donnees_commande_fourn_prov = mysql_fetch_array($result_commande_fourn_prov);
-					$id_commande_fourn_prov=$donnees_commande_fourn_prov['rowid'];
-					if ($id_commande_fourn_prov!="")
-						{
-						mysql_query ("INSERT INTO ".$prefix_doli."commande_fournisseurdet (fk_commande,fk_product,ref,label,description,tva_tx,qty) 
-							values ($id_commande_fourn_prov,$product_id,'$ref_produit','$label_produit','$label_produit','$tax_rate_product_cde_four','$qty_article')");
-						mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-						mysql_select_db("$base_presta"); 
-						mysql_query("SET NAMES UTF8");
-						mysql_query ("INSERT INTO P2D_cde_four (id_cde,fait) 
-							VALUES ('$id_order',1) ON DUPLICATE KEY UPDATE fait=1");
-						mysql_connect("$serveur_doli","$admin_doli","$mdp_doli");
-						mysql_select_db("$base_doli");
-						mysql_query("SET NAMES UTF8");
-						}
-					}                    
-				// FIN AJOUT DU PRODUIT SUR UNE COMMANDE FOURNISSEUR PROVISOIRE *****************************************************************
-		
-				// CHANGE JUSTE STATUT POUR AJOUT DU PRODUIT SUR UNE COMMANDE FOURNISSEUR PROVISOIRE ***********************************************
-				if ($changestatut=="Changer")
-					{
-					mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-					mysql_select_db("$base_presta"); 
-					mysql_query("SET NAMES UTF8");
-					mysql_query ("INSERT INTO P2D_cde_four (id_cde,fait) 
-						VALUES ('$id_order',1) ON DUPLICATE KEY UPDATE fait=1");
-					}                    
-				// FIN CHANGE JUSTE STATUT POUR AJOUT DU PRODUIT SUR UNE COMMANDE FOURNISSEUR PROVISOIRE *********************************************
-				}
-			}
-		mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-		mysql_select_db("$base_presta"); 
-		mysql_query("SET NAMES UTF8");
-		$total_article =$total_article+1;
-		$rang=$rang+1;
-		}
-	// FIN INSERTION DU DETAIL DE LA COMMANDE ******************************************************************
-
 	// AJOUT DE LA LIGNE DE PORT ****************************************************************************************    
 	$rang=$rang+1;
 	mysql_connect("$serveur_doli","$admin_doli","$mdp_doli");
@@ -1002,101 +681,6 @@ function synchroOrder($id_order)
 			}
 		}
 	// FIN AJOUT DE LA LIGNE DE PORT ****************************************************************************************
-		
-	$rang=0;
-
-	// DEFINITION DE L'AFFICHAGE *************************************************************
-	mysql_connect("$serveur_presta","$admin_presta","$mdp_presta");
-	mysql_select_db("$base_presta");
-	mysql_query("SET NAMES UTF8");
-	if (($ajoutcdefourn!="oui") and ($statut!="Changer"))
-		{
-		$echo ='';
-		$echo =''.$echo.'Le '.$date_synchro.' à '.$heure_synchro.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'[ SYNCHRONISATION REUSSIE ]\n';                                        
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'La comande ID : '.$id_order.'\n';
-		$echo =''.$echo.'Nom du client : '.$societe.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'Montant Total = '.$total_a_payer_TTC.' €/TTC\n';
-		$echo =''.$echo.'Dont Port = '.$total_shipping_TTC.' €/TTC\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'Commande passée le : '.$date_commande.'\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'Total produits traités : '.$total_article.'\n';
-		$echo =''.$echo.'(Hors article de port)\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-		$echo =''.$echo.'Info Configuration : \n';
-		$echo =''.$echo.'PrestaShop : '.$version_presta.' / Dolibarr : '.$version_dolibarr.' \n';
-		$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-		$echo =''.$echo.'\n';
-		}
-	if ($ajoutcdefourn=="oui")
-		{
-		$echo ='';
-		$echo =''.$echo.'Le '.$date_synchro.' à '.$heure_synchro.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'[ SYNCHRONISATION REUSSIE ]\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'ET PRODUITS AJOUTES SUR CDE FOURNISSEUR PROVISOIRE\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'Nom du Fournisseur choisi : '.$nom_fournisseur.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'La comande ID : '.$id_order.'\n';
-		$echo =''.$echo.'Nom du client : '.$societe.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'Montant Total = '.$total_a_payer_TTC.' €/TTC\n';
-		$echo =''.$echo.'Dont Port = '.$total_shipping_TTC.' €/TTC\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'Commande passée le : '.$date_commande.'\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'Total produits traités : '.$total_article.'\n';
-		$echo =''.$echo.'(Hors article de port)\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-		$echo =''.$echo.'Info Configuration :\n';
-		$echo =''.$echo.'PrestaShop : '.$version_presta.' / Dolibarr : '.$version_dolibarr.' \n';
-		$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-		$echo =''.$echo.'\n';
-		}
-	if ($statut=="Changer")
-		{
-		$echo ='';
-		$echo =''.$echo.'Le '.$date_synchro.' à '.$heure_synchro.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'[ STATUT CHANGE ]\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'La comande ID : '.$id_order.'\n';
-		$echo =''.$echo.'Nom du client : '.$societe.'\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'Montant Total = '.$total_a_payer_TTC.' €/TTC\n';
-		$echo =''.$echo.'Dont Port = '.$total_shipping_TTC.' €/TTC\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'Commande passée le : '.$date_commande.'\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'Total produits traités : '.$total_article.'\n';
-		$echo =''.$echo.'(Hors article de port)\n';
-		$echo =''.$echo.'---------------------------------------------------\n';
-		$echo =''.$echo.'\n';
-		$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-		$echo =''.$echo.'Info Configuration :\n';
-		$echo =''.$echo.'PrestaShop : '.$version_presta.' / Dolibarr : '.$version_dolibarr.' \n';
-		$echo =''.$echo.'^^^^^^^^^^^^^^^^^^^^\n';
-		$echo =''.$echo.'\n';
-		}
-	// FIN DEFINITION DE L'AFFICHAGE *************************************************************
-
-	// AFFICHAGE ****************************************************
-	echo "<script language='JavaScript'>alert('$echo')</script>";   
-	echo '<SCRIPT>javascript:window.close()</SCRIPT>';
-	// FIN AFFICHAGE ****************************************************
 */
 }
 

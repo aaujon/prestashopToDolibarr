@@ -119,7 +119,7 @@ class Dolibarr {
 
 		// Invoke webservice
 		$response = $this->client_product->__soapCall("getProductOrService", $params);
-		var_dump($response);
+		//var_dump($response);
 
 		return $response;
 	}
@@ -133,7 +133,7 @@ class Dolibarr {
 
 		// Invoke webservice
 		$response = $this->client_product->__soapCall("createProductOrService", $params);
-		var_dump($response);
+		//var_dump($response);
 
 		return $response;
 	}
@@ -147,7 +147,7 @@ class Dolibarr {
 
 		// Invoke webservice
 		$response = $this->client_product->__soapCall("updateProductOrService", $params);
-		var_dump($response);
+		//var_dump($response);
 		return $response;
 	}
 	
