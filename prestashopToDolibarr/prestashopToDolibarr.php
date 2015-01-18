@@ -12,7 +12,7 @@ class prestashopToDolibarr extends Module {
         $this->page = basename(__FILE__, '.php');
         parent::__construct();
         $this->displayName = $this->l('prestashopToDolibarr');
-        $this->description = $this->l('Synchronisation des Commandes, Produits, Clients et Stocks de PrestaShop vers Dolibarr. Module basé sur le module all4doli par Presta 2 Doli');
+        $this->description = $this->l('Synchronize clients, products, orders and invoices from PrestaShop to Dolibarr. Module is originally based on all4doli module by Presta 2 Doli');
     }
 
     public function install()
@@ -20,6 +20,9 @@ class prestashopToDolibarr extends Module {
         Configuration::updateValue('validated', '0');
         Configuration::updateValue('clients_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('products_last_synchro', "1970-01-01 00:00:00");
+        Configuration::updateValue('orders_last_synchro', "1970-01-01 00:00:00");
+        Configuration::updateValue('invoices_last_synchro', "1970-01-01 00:00:00");
+
 
         if (!parent::install()
             OR !$this->registerHook('footer')
@@ -72,7 +75,6 @@ class prestashopToDolibarr extends Module {
                 //Configuration::updateValue('option_image', $option_image);
                 //Configuration::updateValue('decremente', $decremente);
                 //Configuration::updateValue('stock_doli', $stock_doli);
-                //Configuration::updateValue('memo_parametres', $memo_parametres);
 
                 // test dolibarr webservices connexion
 				$client = new SoapClient($dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
@@ -320,27 +322,20 @@ class prestashopToDolibarr extends Module {
 
     function displayActions()
     {
-		$test_texte_synchroclients=" Synchroniser les CLIENTS";
-		$cible_synchroclients='href="../modules/prestashopToDolibarr/synchroclients.php"';
-		   
-		$test_texte_synchroproducts=" Synchroniser les PRODUITS";
-		$cible_synchroproducts='href="../modules/prestashopToDolibarr/synchroproducts.php"';
-
         $output = '
             <fieldset class="width10">
-			    <legend><img src="../modules/'.$this->name.'/synchro.png" /> '.$this->l('All 4 Dolibarr').'</legend>    
+			    <legend><img src="../modules/'.$this->name.'/synchro.png" /> '.$this->l('Synchronization').'</legend>    
 				    <fieldset style="width8">                                                                                                                                           
-								<legend><img src="../modules/'.$this->name.'/synchro.png" /> '.$this->l('Synchronisation manuelle des : ').'</legend>
-
-								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroclients.' target="blank" ><b style="color: #000099;">' .
-                                            $this->l(' '.      $test_texte_synchroclients.'').'</b></a><br />
-                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroproducts.' target="blank" ><b style="color: #000099;">' .
-                                            $this->l(' '.$test_texte_synchroproducts.'').'</b></a><br />	
+								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroclients.php" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize clients').'</b></a><br />
+                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroproducts.php" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize products').'</b></a><br />	
+                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroorders.php" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize orders').'</b></a><br />	
                             <br />		
 					</fieldset>                  
 			</fieldset>';
-/*							 <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchroorder.'  target="blank" ><b  style="color: #000099;">' .$this->l(' '.$test_texte_synchroorder.' ').'</b></a><br /> 
-								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a>'.$cible_synchrocateg.'<b style="color: #000099;">' .$this->l(' '.$test_texte_synchrocateg.'').'</b></a><br />
+/*								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a>'.$cible_synchrocateg.'<b style="color: #000099;">' .$this->l(' '.$test_texte_synchrocateg.'').'</b></a><br />
 								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchrostock2presta.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchrostock2presta.'').'</b></a><br />
 */
 
@@ -370,9 +365,9 @@ class prestashopToDolibarr extends Module {
         $display = '
             <br />
             <fieldset class="width10">
-                <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Synchronisation Dolibarr').'</legend>    
+                <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Dolibarr synchronization').'</legend>    
             <fieldset class="width8"> 
-                <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'<a href='.$cible_synchro1client.' target="blank" ><b style="color: #000099;">Synchroniser le client</b></a><br />
+                <img src="../modules/prestashopToDolibarr/yes.gif" /> > <a href='.$cible_synchro1client.' target="blank" ><b style="color: #000099;">Synchroniser le client</b></a><br />
               </fieldset>
             </fieldset>';
         return $display;
@@ -384,9 +379,9 @@ class prestashopToDolibarr extends Module {
 
         $display = '<br />
                 <fieldset style="width: 400px">
-                    <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Synchronisation Dolibarr').'</legend>    
+                    <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Dolibarr synchronization').'</legend>    
                 <br />
-                    <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a  '.$cible_synchro1order.' target="blank" ><b style="color: #000099;">Synchroniser la commande</b></a><br />
+                    <img src="../modules/prestashopToDolibarr/yes.gif" /> > </a><a  '.$cible_synchro1order.' target="blank" ><b style="color: #000099;">Synchroniser la commande</b></a><br />
                 </fieldset>
                 
                 <br />';
@@ -400,9 +395,9 @@ class prestashopToDolibarr extends Module {
         $display = '
             <br />
             <fieldset class="width10">
-                <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Synchronisation Dolibarr').'</legend>    
+                <legend><img src="../modules/prestashopToDolibarr/synchro.png" /> '.$this->l('Dolibarr synchronization').'</legend>    
             <fieldset class="width8"> 
-                <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'<a href='.$synchro1product.' target="blank" ><b style="color: #000099;">Synchroniser le produit</b></a><br />
+                <img src="../modules/prestashopToDolibarr/yes.gif" /> > <a href='.$synchro1product.' target="blank" ><b style="color: #000099;">Synchroniser le produit</b></a><br />
               </fieldset>
             </fieldset>';
         return $display;
@@ -429,7 +424,7 @@ class prestashopToDolibarr extends Module {
                die(Tools::jsonEncode("Synchronize of ".$tmp."clients done!"));
             }*/
         echo "ok";
-        die(Tools::jsonEncode("Synchronize of clients done!"));
+        die(Tools::jsonEncode("Synchronization of clients done!"));
     }
 }
 ?>
