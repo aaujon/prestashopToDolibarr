@@ -415,19 +415,16 @@ function synchroOrder($id_order)
 			$line->vat_rate = 10;
 		}
 		/*public $id;
-		public $type;
-		
-
-		public $vat_rate;
-
-		
+		public $type;	
 		public $date_start = ""; // dateTime
 		public $date_end = ""; // dateTime*/
 		
 		$lines[$count]= $line;
 		$count++;
-
 	}
+	
+	// add shipping line
+	$lines[$count]= add_shipping_line($order);
 
 	$dolibarr = Dolibarr::getInstance();
 	
@@ -682,6 +679,32 @@ function synchroOrder($id_order)
 		}
 	// FIN AJOUT DE LA LIGNE DE PORT ****************************************************************************************
 */
+}
+
+function add_shipping_line($order) {
+	$line = new DolibarrOrderLines();
+	$line->desc = "delivery";
+	$line->qty = 1;
+	$line->unitprice = $order['total_shipping_tax_excl'];
+	$line->remise = 0;
+	$line->remise_percent = 0;
+	$line->total_net = $order['total_shipping_tax_excl'];
+	$line->total = $order['total_shipping_tax_incl'];
+	$line->total_vat = 	sprintf("%.2f", $order['total_shipping_tax_incl'] - $order['total_shipping_tax_excl']);
+	
+	// compute vat_rate
+	if ($order['total_shipping_tax_excl'] == 0 || $order['total_shipping_tax_incl'] == 0) {
+		$line->vat_rate = 0;
+	} else {
+		$line->vat_rate = sprintf("%.1f", ($order['total_shipping_tax_incl'] - $order['total_shipping_tax_excl'])/$order['total_shipping_tax_excl']*100);
+		if ($line->vat_rate > 19.8 && $line->vat_rate < 20.2) {
+			$line->vat_rate = 20;
+		} else if ($line->vat_rate > 9.8 && $line->vat_rate < 10.2) {
+			$line->vat_rate = 10;
+		}
+	}
+	
+	return $line;
 }
 
 if (Tools::isSubmit('id_order'))
