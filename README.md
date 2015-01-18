@@ -6,8 +6,9 @@ Dolibarr API is used, so you can have a prestashop and a dolibarr intalled on a 
 
 To make it work you need :
 * PrestaShop 1.5.x and 1.6.x
-* Dolibarr  * < 3.6 (Only works for clients and products, order synchronisation doesn't work properly due to a bug on Dolibarr)
-            * >= 3.7 (everything is working)
+* Dolibarr
+    * < 3.6 (Only works for clients and products, order synchronisation doesn't work properly due to a bug on Dolibarr)
+    * >= 3.7 (everything is working)
 
 You need to active Dolibarr webservice to allow prestashop to communicate with your dolibarr instance.
 
