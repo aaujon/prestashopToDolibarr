@@ -88,26 +88,26 @@ function synchroOrder($id_order)
 			break;
 		//** En cours de préparation
 		case 3:
-			$order_status = 1; // due to current dolibarr limitation using webservices
-			//$order_status = 2;           //** Commande en Envoi en cours (mais pas encore expédiée)
+			//$order_status = 1; // due to current dolibarr limitation using webservices
+			$order_status = 2;           //** Commande en Envoi en cours (mais pas encore expédiée)
 			break;
 		// in delivery
 		case 4: 
-			$order_status = 1; // due to current dolibarr limitation using webservices
-			//$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			//$order_status = 1; // due to current dolibarr limitation using webservices
+			$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
 			break;
 		// delivered
 		case 5:
 		case 35:
 		case 37:
-			$order_status = 1; // due to current dolibarr limitation using webservices
-			//$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			//$order_status = 1; // due to current dolibarr limitation using webservices
+			$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
 			break;
 		// cancelled or refund
 		case 6:
 		case 7:
-			$order_status = 0; // due to current dolibarr limitation using webservices
-			//$order_status='-1';        // canceled
+			//$order_status = 0; // due to current dolibarr limitation using webservices
+			$order_status='-1';        // canceled
 			break;
 		// paiement error or not validated
 		case 8: 

@@ -43,91 +43,89 @@ class prestashopToDolibarr extends Module {
     public function getContent()
     {
 	    include_once(dirname(__FILE__).'/dolibarr/DolibarrApi.php');
-			
-        $output = '<h2>'.$this->displayName.'</h2>';
 
-            if (Tools::getValue('submit'.$this->name) == "1")
-            {
-                $dolibarr_server_url = Tools::getValue('dolibarr_server_url');
-                $dolibarr_key = Tools::getValue('dolibarr_key');
-                $dolibarr_login = Tools::getValue('dolibarr_login');
-                $dolibarr_password = Tools::getValue('dolibarr_password');
+		if (Tools::getValue('submit'.$this->name) == "1")
+		{
+			$dolibarr_server_url = Tools::getValue('dolibarr_server_url');
+			$dolibarr_key = Tools::getValue('dolibarr_key');
+			$dolibarr_login = Tools::getValue('dolibarr_login');
+			$dolibarr_password = Tools::getValue('dolibarr_password');
 
-                $prefix_ref_client = Tools::getValue('prefix_ref_client');
-                $client_status = Tools::getValue('client_status');
-                $prefix_ref_product = Tools::getValue('prefix_ref_product');                                          
-                $product_description = Tools::getValue('product_description');                                          
-               
-                Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
-                Configuration::updateValue('dolibarr_key', $dolibarr_key);
-                Configuration::updateValue('dolibarr_login', $dolibarr_login);
-                if($dolibarr_password) {
-                  // only save if a value was entered
-                 Configuration::updateValue('dolibarr_password', $dolibarr_password);
-                }
+			$prefix_ref_client = Tools::getValue('prefix_ref_client');
+			$client_status = Tools::getValue('client_status');
+			$prefix_ref_product = Tools::getValue('prefix_ref_product');                                          
+			$product_description = Tools::getValue('product_description');                                          
+		   
+			Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
+			Configuration::updateValue('dolibarr_key', $dolibarr_key);
+			Configuration::updateValue('dolibarr_login', $dolibarr_login);
+			if($dolibarr_password) {
+			  // only save if a value was entered
+			 Configuration::updateValue('dolibarr_password', $dolibarr_password);
+			}
 
-                //Configuration::updateValue('libelle_port', $libelle_port);
-                //Configuration::updateValue('code_article_port', $code_article_port);
-                Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
-                Configuration::updateValue('client_status', $client_status);
-                Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
-                Configuration::updateValue('product_description', $product_description);
-                //Configuration::updateValue('option_image', $option_image);
-                //Configuration::updateValue('decremente', $decremente);
-                //Configuration::updateValue('stock_doli', $stock_doli);
+			//Configuration::updateValue('libelle_port', $libelle_port);
+			//Configuration::updateValue('code_article_port', $code_article_port);
+			Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
+			Configuration::updateValue('client_status', $client_status);
+			Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
+			Configuration::updateValue('product_description', $product_description);
+			//Configuration::updateValue('option_image', $option_image);
+			//Configuration::updateValue('decremente', $decremente);
+			//Configuration::updateValue('stock_doli', $stock_doli);
 
-                // test dolibarr webservices connexion
-				$client = new SoapClient($dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
-					
-				if (is_null($client))
-                {
-					$testdoliserveur="DOLIBARR : Paramètres incorrectes : vérifez l'adresse du serveur et que les webservices sont bien activés.<br>Arret du TEST";
-				} else
-                {
-					echo "Serveur webservice is enabled<br>";
-					$dolibarr = Dolibarr::getInstance();
-					$response = $dolibarr->getUsers();
-					if ($response["result"]->result_code == 'KO') {
-						$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
-					} else {
-						$testdoliserveur="DOLIBARR : Parametres serveur OK";
-						Configuration::updateValue('validated', '1');
+			// test dolibarr webservices connexion
+			$client = new SoapClient($dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
+				
+			if (is_null($client))
+			{
+				$testdoliserveur="DOLIBARR : Paramètres incorrectes : vérifez l'adresse du serveur et que les webservices sont bien activés.<br>Arret du TEST";
+			} else
+			{
+				echo "Serveur webservice is enabled<br>";
+				$dolibarr = Dolibarr::getInstance();
+				$response = $dolibarr->getUsers();
+				if ($response["result"]->result_code == 'KO') {
+					$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
+				} else {
+					$testdoliserveur="DOLIBARR : Parametres serveur OK";
+					Configuration::updateValue('validated', '1');
 
-					}
 				}
+			}
 
-                $validated = Configuration::get('validated');
-                
-                if($validated!='1')
-                {
-                    $this->_html .= '
-                    <div class="alert error">
-                    <img src="../img/admin/warning.gif" alt="'.$this->l('Confirmation').'" />
-                    '.$this->l('Erreur Paramètres').'
-                    <fieldset class="width10"><legend><img src="../img/admin/contact.gif" />'.$this->l('Rapport').'</legend>
-                    <b style="color: #000033;">'.$this->l($testdoliserveur).'</b><br />
-                    </fieldset>
-                    </div>';     
-                } else {
-                    $this->_html .= '
-                    <div class="conf confirm">
-                    <img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />
-                    '.$this->l('Paramètres Enregistrés').'
-                    <fieldset class="width10"><legend><img src="../img/admin/contact.gif" />'.$this->l('Rapport').'</legend>
-                    <b style="color: #000033;">'.$this->l($testdoliserveur).'</b><br />
-                    </fieldset> 
-                    </div>';
-                 }
-            }
+			$validated = Configuration::get('validated');
+			
+			if($validated!='1')
+			{
+				$this->_html .= '
+				<div class="alert error">
+				<img src="../img/admin/warning.gif" alt="'.$this->l('Confirmation').'" />
+				'.$this->l('Erreur Paramètres').'
+				<fieldset class="width10"><legend><img src="../img/admin/contact.gif" />'.$this->l('Rapport').'</legend>
+				<b style="color: #000033;">'.$this->l($testdoliserveur).'</b><br />
+				</fieldset>
+				</div>';     
+			} else {
+				$this->_html .= '
+				<div class="conf confirm">
+				<img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />
+				'.$this->l('Paramètres Enregistrés').'
+				<fieldset class="width10"><legend><img src="../img/admin/contact.gif" />'.$this->l('Rapport').'</legend>
+				<b style="color: #000033;">'.$this->l($testdoliserveur).'</b><br />
+				</fieldset> 
+				</div>';
+			 }
+		}
 
-            $output .= $this->_html;
-            $output .= $this->_displayErrors();
-            //if (!Tools::isSubmit('action')) {
-                $output .= $this->displayForm();
-            //}
-            $output .= $this->displayActions();
+		$output = $this->_html;
+		$output .= $this->_displayErrors();
+		//if (!Tools::isSubmit('action')) {
+			$output .= $this->displayForm();
+		//}
+		$output .= $this->displayActions();
 
-            return $output;
+		return $output;
     }
 
     private function _displayErrors() {
@@ -322,18 +320,43 @@ class prestashopToDolibarr extends Module {
 
     function displayActions()
     {
-        $output = '
+		$nb_clients_to_sync = Db::getInstance()->getValue("select count(*) from "._DB_PREFIX_."customer where date_upd > '".Configuration::get('clients_last_synchro')."'");
+		$nb_products_to_sync = Db::getInstance()->getValue("select count(*) from "._DB_PREFIX_."product where date_upd > '".Configuration::get('products_last_synchro')."'");
+		$nb_orders_to_sync = Db::getInstance()->getValue("select count(*) from "._DB_PREFIX_."orders where date_upd > '".Configuration::get('orders_last_synchro')."'");
+
+        $output = '<br />
             <fieldset class="width10">
 			    <legend><img src="../modules/'.$this->name.'/synchro.png" /> '.$this->l('Synchronization').'</legend>    
-				    <fieldset style="width8">                                                                                                                                           
+				    <fieldset style="width8">
+						<legend>'.$this->l('Clients').'</legend>  
+								  <a>'.$this->l('Last synchronization : ').Configuration::get('clients_last_synchro').', 
+								  '.$this->l('There is ').$nb_clients_to_sync.$this->l(' updated or new clients').'</a><br />																													
 								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroclients.php" target="blank" ><b style="color: #000099;">' .
-                                            $this->l('Synchronize clients').'</b></a><br />
+                                            $this->l('Synchronize updated and new clients').'</b></a><br />
+                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroclients.php?action=reset" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize all clients').'</b></a><br />
+                            <br />
+					</fieldset>
+					<fieldset style="width8">
+						<legend>'.$this->l('Products').'</legend>  
+								   <a>'.$this->l('Last synchronization : ').Configuration::get('products_last_synchro').', 
+								   '.$this->l('There is ').$nb_products_to_sync.$this->l(' updated or new products').'</a><br />
                                   <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroproducts.php" target="blank" ><b style="color: #000099;">' .
-                                            $this->l('Synchronize products').'</b></a><br />	
-                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroorders.php" target="blank" ><b style="color: #000099;">' .
-                                            $this->l('Synchronize orders').'</b></a><br />	
+                                            $this->l('Synchronize updated and new products').'</b></a><br />
+                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroproducts.php?action=reset" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize all products').'</b></a><br />	
                             <br />		
-					</fieldset>                  
+					</fieldset> 
+					<fieldset style="width8">
+						<legend>'.$this->l('Orders').'</legend>  
+								   <a>'.$this->l('Last synchronization : ').Configuration::get('orders_last_synchro').', 
+								   '.$this->l('There is ').$nb_orders_to_sync.$this->l(' updated or new orders').'</a><br />
+                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroorders.php" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize updated and new orders').'</b></a><br />
+                                  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroorders.php?action=reset" target="blank" ><b style="color: #000099;">' .
+                                            $this->l('Synchronize all orders').'</b></a><br />
+                            <br />		
+					</fieldset>                 
 			</fieldset>';
 /*								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a>'.$cible_synchrocateg.'<b style="color: #000099;">' .$this->l(' '.$test_texte_synchrocateg.'').'</b></a><br />
 								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchrostock2presta.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchrostock2presta.'').'</b></a><br />

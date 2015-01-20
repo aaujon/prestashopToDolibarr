@@ -3,6 +3,14 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 include('synchro1order.php');
 
+// action if reset synchronization
+if (Tools::isSubmit('action')) {
+    $action=Tools::getValue('action');
+    if ($action == "reset") {
+		Configuration::updateValue('orders_last_synchro', "1970-01-01 00:00:00");
+	}
+}
+
 $last_synchro = Configuration::get('orders_last_synchro');
 echo "Synchronisation of orders begins for modification since ".$last_synchro."<br>";
 
