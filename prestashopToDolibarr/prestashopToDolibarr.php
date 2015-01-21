@@ -208,7 +208,8 @@ class prestashopToDolibarr extends Module {
             'input' => array(
                 array(
                     'type' => 'text',
-                    'label' => $this->l('Client reference prefix'),
+                    'label' => $this->l('Client code prefix'),
+					'desc' => $this->l('If you define one the client code will be {your-prefix}-{prestashopId}. Leave blank if you prefer to let Dolibarr handle code.'),
                     'name' => 'prefix_ref_client',
                     'size' => 33,
                     'required' => false

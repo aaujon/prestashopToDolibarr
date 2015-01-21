@@ -9,8 +9,8 @@ function synchroOrder($id_order)
 {
 	echo "Synchronisation order : $id_order<br>"; 
 
-	$prefix_ref_client=Configuration::get('prefix_ref_client');
-	$prefix_ref_client = accents_sans("$prefix_ref_client");
+	//$prefix_ref_client=Configuration::get('prefix_ref_client');
+	//$prefix_ref_client = accents_sans("$prefix_ref_client");
 	
 	// DEFINITION DE DONNEES *****************************************
 	$total_article=0;
@@ -430,7 +430,7 @@ function synchroOrder($id_order)
 	
 	var_dump($prefix_ref_client.$id_customer);
 	// retrieve user
-	$client = $dolibarr->getUser($prefix_ref_client.$id_customer);
+	$client = $dolibarr->getUser("PSUSER-".$id_customer);
 	if ($client["result"]->result_code == 'NOT_FOUND')
     {
 		echo "Error : client doesn't exist. Try to synchronize clients first.";

@@ -64,11 +64,16 @@ function synchroClient($id_customer)
 	$dolibarr = Dolibarr::getInstance();
 
 	// Check if already exists in Dolibarr
-	$exists = $dolibarr->getUser($prefix_ref_client.$id_customer);
+	$exists = $dolibarr->getUser("PSUSER-".$id_customer);
 		
 	$client = new DolibarrThirdParty();
-	$client->ref_ext = $prefix_ref_client.$id_customer;
-	$client->customer_code = $prefix_ref_client.$id_customer;
+	$client->ref_ext = "PSUSER-".$id_customer;
+	if ($prefix_ref_client == "") {
+		$client->customer_code = -1;
+	} else {
+		$client->customer_code = $prefix_ref_client.$id_customer;
+	}
+
     $client->status = $client_status;
 	$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
 	$client->email = $mail;
@@ -84,6 +89,7 @@ function synchroClient($id_customer)
 		// Create new user
 		echo "Create new user : <br>";
 		$result = $dolibarr->createUser($client);
+		var_dump($result);
 		if ($result["result"]->result_code == 'KO')
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;

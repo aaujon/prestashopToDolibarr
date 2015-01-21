@@ -17,7 +17,7 @@ class DolibarrThirdParty {
 	public $client = 1;
 	public $supplier; 
 	public $customer_code;
-	public $supplier_code;
+	public $supplier_code; // nothing
 	public $customer_code_accountancy;
 	public $supplier_code_accountancy;
 	public $date_creation = ""; // dateTime
