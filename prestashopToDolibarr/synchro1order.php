@@ -86,21 +86,21 @@ function synchroOrder($id_order)
 			//$invoice_status=2;            //** Facture en paiement validé
 			//$paye=1;                      //** Facture en payée
 			break;
-		//** En cours de préparation
+		// En cours de préparation
 		case 3:
-			//$order_status = 1; // due to current dolibarr limitation using webservices
-			$order_status = 2;           //** Commande en Envoi en cours (mais pas encore expédiée)
+			$create_invoice = true;
+			$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
 			break;
 		// in delivery
 		case 4: 
-			//$order_status = 1; // due to current dolibarr limitation using webservices
+			$create_invoice = true;
 			$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
 			break;
 		// delivered
 		case 5:
 		case 35:
 		case 37:
-			//$order_status = 1; // due to current dolibarr limitation using webservices
+			$create_invoice = true;
 			$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
 			break;
 		// cancelled or refund
@@ -466,9 +466,6 @@ function synchroOrder($id_order)
 		}
 	} else
     {
-		echo "Can't update order, dolibarr 3.6 webservice is bugged. Fixed in 3.7";
-		return;
-		/*
 		// Update order
 		echo "update order<br>";
 		$oldOrder = $exists["order"];
@@ -478,63 +475,25 @@ function synchroOrder($id_order)
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
 		}
-		*/
-	}	
+	}
+	
+	// Create invoice if necessary
+	if ($create_invoice)
+	{
+		$dolibarrInvoice = new DolibarrInvoice();
+		$dolibarrInvoice->ref_ext = $id_order;
+		$dolibarrInvoice->thirdparty_id = $client["thirdparty"]->id;
+		$dolibarrInvoice->date = $order["date_add"];
+		if ($order['delivery_number'] != 0) {
+			$dolibarrInvoice->date_livraison = $order['delivery_date'];
+		}
+		$dolibarrInvoice->status = $order_status;
+		$dolibarrInvoice->lines = $lines;
+	}
+	
+	// mark as paid
+	
 	/*
-	// CREATION DE LA FACTURE *********************************************************
-	if ($rowid_client!="")
-		{
-		if ($create_invoice)
-			{        
-			if ($verif_facture=="")
-				{
-				$info_erreur="Erreur de synchro sur : INSERT FACTURE - ID FACTURE : $rowid_facture - ID CLIENT : $rowid_client - REF COMMANDE PRESTASHOP : $ref_facture";//or die($info_erreur."<br />\n".mysql_error())
-				mysql_query ("INSERT INTO ".$prefix_doli."facture (rowid,facnumber,ref_client,fk_soc,datec,datef,date_valid,tms,paye,tva,total,total_ttc,fk_statut,fk_cond_reglement,fk_mode_reglement,date_lim_reglement,model_pdf) 
-					VALUES ('$rowid_facture','$ref','$ref_client_doli','$rowid_client','$dateorder','$dateorder','$dateorder','$dateorder','$paye','$total_taxes','$total_a_payer_HT','$total_a_payer_TTC','$invoice_status',$fk_cond_reglement_commande,$fk_mode_reglement_commande,'$dateorder','$model_pdf_facture')") 
-						or die($info_erreur."<br />\n".mysql_error());
-				}
-			if ($verif_facture!="")
-				{
-				$info_erreur="Erreur de synchro sur : UPDATE FACTURE - ID FACTURE : $rowid_facture - ID CLIENT : $rowid_client - REF COMMANDE PRESTASHOP : $ref_facture";//or die($info_erreur."<br />\n".mysql_error())
-				mysql_query ("UPDATE ".$prefix_doli."facture set entity='$entity',ref_client='$ref_client_doli',fk_soc='$rowid_client',datec='$dateorder',datef='$dateorder',date_valid='$dateorder',tms='$dateorder',tva='$total_taxes',total='$total_a_payer_HT',total_ttc='$total_a_payer_TTC',fk_mode_reglement='$fk_mode_reglement_commande' where rowid=$rowid_facture") 
-					or die($info_erreur."<br />\n".mysql_error());
-				}
-			}        
-		// INSERTION DES LIENS COMMANDE / FACTURE ************************************
-		$sql_recup_verif_lien_commande="select * from ".$prefix_doli."element_element where fk_source ='".$rowid_commande."' and sourcetype='commande' and fk_target='".$rowid_facture."' and targettype='facture'";
-		$result_verif_lien_commande = mysql_query($sql_recup_verif_lien_commande) or die($sql_recup_verif_lien_commande."<br />\n".mysql_error());
-		$donnees_verif_lien_commande = mysql_fetch_array($result_verif_lien_commande);
-		$verif_lien_commande=$donnees_verif_lien_commande['rowid'];
-		if ($verif_lien_commande=="")
-			{
-			$info_erreur="Erreur de synchro sur : INSERTION DES LIENS COMMANDE / FACTURE";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("INSERT INTO ".$prefix_doli."element_element (fk_source,sourcetype,fk_target,targettype) 
-				VALUES ('$rowid_commande','commande','$rowid_facture','facture')")
-					or die($info_erreur."<br />\n".mysql_error());
-			}
-		// FIN INSERTION DES LIENS COMMANDE / FACTURE ************************************
-		
-		}
-
-	// INSERTION DES LIENS PROPAL / FACTURE ************************************
-	if ($rowid_client!="")
-		{
-		$sql_recup_verif_lien_commande="select * from ".$prefix_doli."element_element where fk_source ='".$rowid_propal."' and sourcetype='propal' and fk_target='".$rowid_facture."' and targettype='facture'";
-		$result_verif_lien_commande = mysql_query($sql_recup_verif_lien_commande) or die($sql_recup_verif_lien_commande."<br />\n".mysql_error());
-		$donnees_verif_lien_commande = mysql_fetch_array($result_verif_lien_commande);
-	//     $donnees_verif_lien_commande = Db::getInstance()->GetRow("select * from ".$prefix_doli."element_element where fk_source ='".$rowid_propal."' and sourcetype='propal' and fk_target='".$rowid_facture."' and targettype='facture'");
-		$verif_lien_commande=$donnees_verif_lien_commande['rowid'];
-		if ($verif_lien_commande=="")
-			{
-			$info_erreur="Erreur de synchro sur : INSERTION DES LIENS PROPAL / FACTURE";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("INSERT INTO ".$prefix_doli."element_element (fk_source,sourcetype,fk_target,targettype) 
-				VALUES ('$rowid_propal','propal','$rowid_facture','facture')")
-					or die($info_erreur."<br />\n".mysql_error());
-			}
-		}
-	// FIN INSERTION DES LIENS PROPAL / FACTURE ************************************
-	// FIN CREATION DE LA FACTURE *********************************************************
-
 	// ECRITURE DU PAIEMENT SI POSSIBLE ***********************************************************
 	if ($create_invoice)
 		{

@@ -23,7 +23,6 @@ class prestashopToDolibarr extends Module {
         Configuration::updateValue('orders_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('invoices_last_synchro', "1970-01-01 00:00:00");
 
-
         if (!parent::install()
             OR !$this->registerHook('footer')
             OR !$this->registerHook('adminOrder')

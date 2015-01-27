@@ -23,6 +23,7 @@ class Dolibarr {
 	private $client_thirdparty;
     private $client_product;
     private $client_order;
+    private $client_invoice;
 	
 	private function initAuthentication() {
 		// load credentials
@@ -40,6 +41,7 @@ class Dolibarr {
 		$this->client_thirdparty = new SoapClient($this->dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
 		$this->client_product = new SoapClient($this->dolibarr_server_url."/webservices/server_productorservice.php?wsdl");
 		$this->client_order = new SoapClient($this->dolibarr_server_url."/webservices/server_order.php?wsdl");
+		$this->client_invoice = new SoapClient($this->dolibarr_server_url."/webservices/server_invoice.php?wsdl");
 		//var_dump($this->client_product);
 		//var_dump($this->client_product->__getFunctions());
 	}
@@ -192,6 +194,52 @@ class Dolibarr {
 
 		// Invoke webservice
 		$response = $this->client_order->__soapCall("updateOrder", $params);
+		var_dump($response);
+		return $response;
+	}
+	
+	/********** Methods for invoices **********/
+
+	public function getInvoice($ref_ext) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+          "id" => "",
+          "ref" => "",
+		  "ref_ext" => $ref_ext
+		);
+
+		// Invoke webservice
+		$response = $this->client_order->__soapCall("getInvoice", $params);
+		var_dump($response);
+
+		return $response;
+	}
+
+	public function createInvoice($invoice) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "invoice" => $invoice
+		);
+
+		var_dump($params);
+		// Invoke webservice
+		$response = $this->client_order->__soapCall("createInvoice", $params);
+		var_dump($response);
+
+		return $response;
+	}
+
+	public function updateInvoice($order) {
+		// Set parameters for the request
+		$params = array(
+		  "authentication" => $this->authentication,
+		  "invoice" => $invoice
+		);
+
+		// Invoke webservice
+		$response = $this->client_order->__soapCall("updateInvoice", $params);
 		var_dump($response);
 		return $response;
 	}
