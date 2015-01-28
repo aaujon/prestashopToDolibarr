@@ -82,7 +82,6 @@ class prestashopToDolibarr extends Module {
 				$testdoliserveur="DOLIBARR : Paramètres incorrectes : vérifez l'adresse du serveur et que les webservices sont bien activés.<br>Arret du TEST";
 			} else
 			{
-				echo "Serveur webservice is enabled<br>";
 				$dolibarr = Dolibarr::getInstance();
 				$response = $dolibarr->getUsers();
 				if ($response["result"]->result_code == 'KO') {

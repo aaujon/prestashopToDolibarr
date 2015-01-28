@@ -13,6 +13,8 @@ error_reporting(E_ALL);
 include('DolibarrThirdParty.php');
 include('DolibarrProduct.php');
 include('DolibarrOrder.php');
+include('DolibarrInvoice.php');
+
 include('DolibarrAuthentication.php');
 
 class Dolibarr {
