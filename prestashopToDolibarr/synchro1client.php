@@ -32,34 +32,41 @@ function synchroClient($id_customer)
 	$mail=$donnees_customer['email'];
 	echo "Email : $mail<br>";
 
-	// Retrieve client address
-	$adresse = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."address where id_customer='".$id_customer."'");
-		$address1=$adresse['address1'];
-		$address1= accents_majuscules("$address1");
+	// Retrieve client addresses
+	if ($addresses = Db::getInstance()->ExecuteS("select * from "._DB_PREFIX_."address where id_customer='".$id_customer."'"))
+	{
+		foreach ($addresses as $address)
+		{
+			$contact = new DolibarrContact();
 
-		$address2=$adresse['address2'];
-		$address2= accents_majuscules("$address2");
-		
-		$postcode=$adresse['postcode'];
-		$city=$adresse['city'];   
-		$city= accents_majuscules("$city");
+			$address1=$address['address1'];
+			$address1= accents_majuscules("$address1");
 
-		$id_country=$adresse['id_country'];
-		//TODO improve country correspondance
-		if ($id_country == 8) {
-			$country = 1; // for FRANCE
-		} else {
-			$country = "";
+			$address2=$address['address2'];
+			$address2= accents_majuscules("$address2");
+			
+			$postcode=$address['postcode'];
+			$city=$address['city'];   
+			$city= accents_majuscules("$city");
+
+			$id_country=$address['id_country'];
+			//TODO improve country correspondance
+			if ($id_country == 8) {
+				$country = 1; // for FRANCE
+			} else {
+				$country = "";
+			}
+
+			$phone=$address['phone'];
+			$phone = tel_cacateres("$phone");
+
+			$mobile=$address['phone_mobile'];
+			if ($mobile != null) {
+				// only keep one phone number, mobile is prefered
+				$phone = tel_cacateres("$mobile");
+			}
 		}
-
-		$phone=$adresse['phone'];
-		$phone = tel_cacateres("$phone");
-
-		$mobile=$adresse['phone_mobile'];
-		if ($mobile != null) {
-			// only keep one phone number, mobile is prefered
-			$phone = tel_cacateres("$mobile");
-		}
+	}
 
 	$dolibarr = Dolibarr::getInstance();
 

@@ -114,83 +114,10 @@ function synchroOrder($id_order)
 			$order_status=0;           // draft
 			break;
 	}
-/*
-	// RECUPERATION ADRESSES DU CLIENT *************************************************
-	$sql_adresse="select * from ".$prefix_presta."address where id_customer='".$id_customer."'";
-	$result_adresse = mysql_query($sql_adresse) or die($sql_adresse."<br />\n".mysql_error());
-	while ($adresse = mysql_fetch_array($result_adresse))
-	{
-		$entreprise=$adresse['company'];
-			$entreprise = str_replace( "ë", "e", $entreprise);$entreprise = str_replace( "Ë", "E", $entreprise);
-			$chaine=$entreprise;    
-			$chaine= accents_majuscules("$chaine");   
-			$entreprise=$chaine;
-		$prenom=$adresse['firstname'];
-			$prenom = str_replace( "ë", "e", $prenom);$prenom = str_replace( "Ë", "E", $prenom);
-			$chaine=$prenom;    
-			$chaine= accents_majuscules("$chaine");
-			$prenom=$chaine;
-		$nom=$adresse['lastname'];
-			$nom = str_replace( "ë", "e", $nom);$nom = str_replace( "Ë", "E", $nom);
-			$chaine=$nom;    
-			$chaine= accents_majuscules("$chaine");
-			$nom=$chaine;
-		if ($entreprise!="")
-		{
-			$societe=$entreprise;
-				$chaine=$societe;    
-				$chaine= accents_majuscules("$chaine");
-				$societe=$chaine;
-		}
-		if ($entreprise=="")
-		{
-			$societe="$nom $prenom";
-				$chaine=$societe;    
-				$chaine= accents_majuscules("$chaine");
-				$societe=$chaine;
-		}
-		$champadresse1=$adresse['address1'] ;
-			$chaine=$champadresse1;    
-			$chaine= accents_majuscules("$chaine");
-			$champadresse1=$chaine;
-		$champadresse2=$adresse['address2'];
-			$chaine=$champadresse2;    
-			$chaine= accents_majuscules("$chaine");
-			$champadresse2=$chaine;
-		$codepostal=$adresse['postcode'];
-		$ville=$adresse['city'];
-			$chaine=$ville;    
-			$chaine= accents_majuscules("$chaine");
-			$ville=$chaine;
-		$country=$adresse['country'];
-			$chaine=$country;    
-			$chaine= accents_majuscules("$chaine");    
-			$country=$chaine;
-		$id_country=$adresse['id_country'];
-			$donnees_country = Db::getInstance()->GetRow("select * from ".$prefix_presta."country where id_country='".$id_country."'");
-			$iso_code_country=$donnees_country['iso_code'];
-		$tel=$adresse['phone'];
-			$chaine=$tel;    
-			$chaine= tel_cacateres("$chaine");
-			$tel=$chaine;
-		$mobile=$adresse['phone_mobile'];
-			$chaine=$tel;    
-			$chaine= tel_cacateres("$chaine");
-			$tel=$chaine;
-		$vat_number=$adresse['vat_number'];
-		$date=$adresse['date_add'];
-		$date_compte_client=substr($date,2,5);
-			$date_compte_client= str_replace( "-", "", $date_compte_client);
-		$active=$adresse['active'];
-		$deleted=$adresse['deleted'];                                       
-		$alias=$adresse['alias'];
-		$poste=$alias;
-			$poste="($poste)";
-			$chaine=$poste;    
-			$chaine= accents_minuscules("$chaine");
-			$poste=$chaine;
-		$emetteur_paiement = "$entreprise $nom";
-	}*/
+
+	
+	// Retrieve client delivery address
+
 	/*
 	// Insertion TYPE DE PAIEMENT ***********************************************************
 	$sql_recup_verif_mode_paiement="select * from ".$prefix_doli."c_paiement where libelle='Paiement en ligne'";
