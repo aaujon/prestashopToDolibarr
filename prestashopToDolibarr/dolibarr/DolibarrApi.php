@@ -114,13 +114,13 @@ class Dolibarr {
 	}
 	
 	/********** Methods for contacts **********/
-	public function getContact($ref_ext) {
+	public function getContact($id) {
 		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
-          "id" => "",
+          "id" => $id,
           "ref" => "",
-		  "ref_ext" => $ref_ext
+          "ref_ext" => ""
 		);
 
 		// Invoke webservice

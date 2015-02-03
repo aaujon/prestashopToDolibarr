@@ -32,42 +32,6 @@ function synchroClient($id_customer)
 	$mail=$donnees_customer['email'];
 	echo "Email : $mail<br>";
 
-	// Retrieve client addresses
-	if ($addresses = Db::getInstance()->ExecuteS("select * from "._DB_PREFIX_."address where id_customer='".$id_customer."'"))
-	{
-		foreach ($addresses as $address)
-		{
-			$contact = new DolibarrContact();
-
-			$address1=$address['address1'];
-			$address1= accents_majuscules("$address1");
-
-			$address2=$address['address2'];
-			$address2= accents_majuscules("$address2");
-			
-			$postcode=$address['postcode'];
-			$city=$address['city'];   
-			$city= accents_majuscules("$city");
-
-			$id_country=$address['id_country'];
-			//TODO improve country correspondance
-			if ($id_country == 8) {
-				$country = 1; // for FRANCE
-			} else {
-				$country = "";
-			}
-
-			$phone=$address['phone'];
-			$phone = tel_cacateres("$phone");
-
-			$mobile=$address['phone_mobile'];
-			if ($mobile != null) {
-				// only keep one phone number, mobile is prefered
-				$phone = tel_cacateres("$mobile");
-			}
-		}
-	}
-
 	$dolibarr = Dolibarr::getInstance();
 
 	// Check if already exists in Dolibarr
@@ -84,11 +48,11 @@ function synchroClient($id_customer)
     $client->status = $client_status;
 	$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
 	$client->email = $mail;
-	$client->phone = $phone;
-	$client->address = $address1." ".$address2;
-	$client->town = $city;
-	$client->zip = $postcode;
-	$client->country_id = $country;
+	//$client->phone = $phone;
+	//$client->address = $address1." ".$address2;
+	//$client->town = $city;
+	//$client->zip = $postcode;
+	//$client->country_id = $country;
 	$client->date_modification = new DateTime('NOW');
 
 	if ($exists["result"]->result_code == 'NOT_FOUND')
@@ -112,7 +76,91 @@ function synchroClient($id_customer)
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
 		}
-	}	
+	}
+	
+	if ($result["result"]->result_code == 'OK')
+	{
+		// synchronize client addresses
+		if ($addresses = Db::getInstance()->ExecuteS("select * from "._DB_PREFIX_."address where id_customer='".$id_customer."'"))
+		{
+			foreach ($addresses as $address)
+			{
+				$contact = new DolibarrContact();
+				$contact->socid = $result["id"];
+
+				$contact->id=$address['id_address'];
+				$contact->lastname = $address['lastname'];
+				$contact->firstname = $address['firstname'];
+				$address1=$address['address1'];
+				$address1= accents_majuscules("$address1");
+				$address2=$address['address2'];
+				$address2= accents_majuscules("$address2");
+				$contact->address = $address1.' '.$address2;		
+				$contact->zip =$address['postcode'];
+				$contact->town = accents_majuscules($address['city']);
+				$contact->note = $address['other'];
+				
+				//TODO improve country correspondance
+				$id_country=$address['id_country'];
+				if ($id_country == 8) {
+					$country = 1; // for FRANCE
+				} else {
+					$country = "";
+				}
+				
+				$contact->country_id = $country;
+				
+				$phone = $address['phone'];
+				$phone = tel_cacateres("$phone");
+
+				$mobile=$address['phone_mobile'];
+				$mobile = tel_cacateres("$mobile");
+
+				$contact->phone_perso = $phone;
+				$contact->phone_mobile = $mobile;
+				$contact->email = $mail;
+				$contact->birthday = $birthday;
+				$contact->civility_id = $civilite;
+				//public $phone_pro;
+				//public $fax;
+						
+				//public $code;
+				
+				/*public $default_lang;
+				public $no_email;
+				public $ref_facturation;
+				public $ref_contrat;
+				public $ref_commande;
+				public $ref_propal;
+				public $user_id;
+				public $user_login;*/
+				
+				var_dump($contact);
+				
+				$result = $dolibarr->getContact($address['id_address']);
+				var_dump($result);
+				if ($result["result"]->result_code == 'NOT_FOUND')
+				{
+					echo "create address <br>";
+					$result = $dolibarr->createContact($contact);
+					var_dump($result);
+					if ($result["result"]->result_code == 'KO')
+					{
+						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
+					}
+				} else
+				{
+					// Update address
+					echo "update address <br>";
+					$result = $dolibarr->updateContact($contact);
+					if ($result["result"]->result_code == 'KO')
+					{
+						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
+					}
+				}
+			}
+		}
+	}
 }
 
 if (Tools::isSubmit('id_customer'))
