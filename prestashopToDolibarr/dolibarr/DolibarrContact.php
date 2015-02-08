@@ -69,7 +69,7 @@ class DolibarrContact {
 	public $user_login;
 	public $civility_id;
 	public $poste;
-	public $status;
+	public $statut;
 }
 
 ?>
