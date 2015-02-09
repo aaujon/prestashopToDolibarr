@@ -90,19 +90,24 @@ function synchroOrder($id_order)
 		// En cours de préparation
 		case 3:
 			$create_invoice = true;
-			$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
+			//$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
+			$order_status = 1;
 			break;
 		// in delivery
 		case 4: 
 			$create_invoice = true;
-			$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			//$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			$order_status = 1;
+
 			break;
 		// delivered
 		case 5:
 		case 35:
 		case 37:
 			$create_invoice = true;
-			$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			//$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			$order_status = 1;
+
 			break;
 		// cancelled or refund
 		case 6:
@@ -223,102 +228,7 @@ function synchroOrder($id_order)
 		}
 	$fk_mode_reglement_commande=$rowid_mode_paiement;
 	// FIN CREATION DU TYPE DE PAIEMENT DANS DOLIBARR *******************************
-
-	// DETERMINATION ID PROPAL DOLIBARR *******************************************
-	$req_id_propal="select max(rowid) from ".$prefix_doli."propal";
-	$req_id_propal=mysql_query($req_id_propal);
-	$id_propal=mysql_result($req_id_propal,0,"max(rowid)");
-	$id_propal=$id_propal+1;
-	$sql_recup_verif_propal="select * from ".$prefix_doli."propal where total='$total_a_payer_TTC' and datec ='".$dateorder."'";
-	$result_verif_propal = mysql_query($sql_recup_verif_propal) or die($sql_recup_verif_propal."<br />\n".mysql_error());
-	$donnees_verif_propal = mysql_fetch_array($result_verif_propal);
-	$verif_propal=$donnees_verif_propal['ref_client'];
-	if ($verif_propal!="")
-		{
-		$rowid_propal=$donnees_verif_propal['rowid'];
-		// CREATION DE LA REFERENCE PROPAL *************************************************
-		$ref_propal=$donnees_verif_propal['ref'];
-		// FIN CREATION DE LA REFERENCE PROPAL *************************************************
-		}
-	if ($verif_propal=="")
-		{
-		$rowid_propal=$id_propal;
-		// CREATION DE LA REFERENCE PROPAL *************************************************
-		$req_dernier_id="select max(rowid) from ".$prefix_doli."propal order by ref asc";
-		$req_dernier_id=mysql_query($req_dernier_id);
-		$dernier_id=mysql_result($req_dernier_id,0,"max(rowid)");
-		$sql_derniere_ref = Db::getInstance()->GetRow("select * from ".$prefix_doli."propal where rowid='$dernier_id'");
-		$derniere_ref=$sql_derniere_ref['ref'];
-		$verif_chrono=substr($derniere_ref,0,2);
-		$chrono=substr($derniere_ref,7,4);
-		$chrono=$chrono+1;
-		$chrono_nnnn=str_pad($chrono, 4, "0", STR_PAD_LEFT);
-		$annee=substr($date_propal,2,2);
-		$mois=substr($date_propal,5,2);
-		$ref="$annee";
-		$ref="$ref$mois-";
-		$ref="PR$ref$chrono_nnnn";
-		}
-		// FIN CREATION DE LA REFERENCE PROPAL *************************************************
-	// FIN DETERMINATION ID PROPAL DOLIBARR *******************************************
 	*/
-	// CREATION DE LA PROPAL ***************************************************
-	/*if ($rowid_client!="")
-		{
-		if ($verif_propal!="")
-			{
-			$info_erreur="Erreur de synchro sur : UPDATE PROPAL - ID PROPAL : $rowid_propal - ID CLIENT : $rowid_client - REF COMMANDE PRESTASHOP : $ref_propal";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("UPDATE ".$prefix_doli."propal set fk_soc='$rowid_client',tms='$dateorder',entity='$entity',ref_client='$ref_client_doli',datec='$dateorder',datep='$date_propal',fin_validite='$dateorder',date_valid='$dateorder',date_cloture='$dateorder',fk_statut='$statut_propal',total_ht='$total_a_payer_HT',tva='$total_taxes',total='$total_a_payer_TTC',fk_mode_reglement='$fk_mode_reglement_commande' where rowid=$rowid_propal") 
-				or die($info_erreur."<br />\n".mysql_error());
-			}
-		if ($verif_propal=="")
-			{
-			$info_erreur="Erreur de synchro sur : INSERT PROPAL - ID PROPAL : $rowid_propal - ID CLIENT : $rowid_client - REF COMMANDE PRESTASHOP : $ref_propal";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("INSERT INTO ".$prefix_doli."propal (rowid,fk_soc,tms,ref,entity,ref_client,datec,datep,fin_validite,date_valid,date_cloture,fk_statut,total_ht,tva,total,fk_cond_reglement,fk_mode_reglement,model_pdf) 
-				VALUES ('$rowid_propal','$rowid_client','$dateorder','$ref','$entity','$ref_client_doli','$dateorder','$date_propal','$dateorder','$dateorder','$dateorder','$statut_propal','$total_a_payer_HT','$total_taxes','$total_a_payer_TTC','$fk_cond_reglement','$fk_mode_reglement','$model_pdf')") 
-					or die($info_erreur."<br />\n".mysql_error());
-			}
-		}
-	// FIN CREATION DE LA PROPAL ***************************************************
-*/
-	// DETERMINATION ID COMMANDE DOLIBARR *******************************************
-	/*$req_id_commande="select max(rowid) from ".$prefix_doli."commande";
-	$req_id_commande=mysql_query($req_id_commande);
-	$id_commande=mysql_result($req_id_commande,0,"max(rowid)");
-	$id_commande=$id_commande+1;
-	$sql_recup_verif_commande="select * from ".$prefix_doli."commande where total_ttc='$total_a_payer_TTC' and date_creation ='".$dateorder."'";
-	$result_verif_commande = mysql_query($sql_recup_verif_commande) or die($sql_recup_verif_commande."<br />\n".mysql_error());
-	$donnees_verif_commande = mysql_fetch_array($result_verif_commande);
-	$verif_commande=$donnees_verif_commande['ref_client'];
-	if ($verif_commande!="")
-		{
-		$rowid_commande=$donnees_verif_commande['rowid'];
-		// CREATION DE LA REFERENCE COMMANDE *************************************************
-		$ref_commande=$donnees_verif_commande['ref'];
-		// FIN CREATION DE LA REFERENCE COMMANDE *************************************************
-		}
-	if ($verif_commande=="")
-		{
-		$rowid_commande=$id_commande;
-		// CREATION DE LA REFERENCE COMMANDE *************************************************
-		$req_dernier_id="select max(rowid) from ".$prefix_doli."commande order by ref asc";
-		$req_dernier_id=mysql_query($req_dernier_id);
-		$dernier_id=mysql_result($req_dernier_id,0,"max(rowid)");
-		$sql_derniere_ref = Db::getInstance()->GetRow("select * from ".$prefix_doli."commande where rowid='$dernier_id'");
-		$derniere_ref=$sql_derniere_ref['ref'];
-		$verif_chrono=substr($derniere_ref,0,2);
-		$chrono=substr($derniere_ref,7,4);
-		$chrono=$chrono+1;
-		$chrono_nnnn=str_pad($chrono, 4, "0", STR_PAD_LEFT);
-		$annee=substr($date_commande,2,2);
-		$mois=substr($date_commande,5,2);
-		$ref="$annee";
-		$ref="$ref$mois-";
-		$ref="CO$ref$chrono_nnnn";
-		}
-		// FIN CREATION DE LA REFERENCE COMMANDE *************************************************
-	// FIN DETERMINATION ID COMMANDE DOLIBARR *******************************************
-*/
 
 	// load order details
 	$products = Db::getInstance()->executeS("select * from "._DB_PREFIX_."order_detail where id_order='".$id_order."'");
