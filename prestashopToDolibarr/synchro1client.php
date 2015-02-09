@@ -28,6 +28,8 @@ function synchroClient($id_customer)
 		$civilite="MR";
 	} elseif ($id_gender==2) {
 		$civilite="MME";
+	} elseif ($id_gender==3) {
+		$civilite="MME";
 	}
 	$mail=$donnees_customer['email'];
 	echo "Email : $mail<br>";
@@ -85,10 +87,11 @@ function synchroClient($id_customer)
 		{
 			foreach ($addresses as $address)
 			{
+				echo "<br/> Synchronize address";
 				$contact = new DolibarrContact();
 				$contact->socid = $result["id"];
 
-				$contact->id=$address['id_address'];
+				$contact->ref_ext=$address['id_address'];
 				$contact->lastname = $address['lastname'];
 				$contact->firstname = $address['firstname'];
 				$address1=$address['address1'];
@@ -141,7 +144,8 @@ function synchroClient($id_customer)
 				var_dump($result);
 				if ($result["result"]->result_code == 'NOT_FOUND')
 				{
-					echo "create address <br>";
+					// Create address
+					echo "<br>create address <br>";
 					$result = $dolibarr->createContact($contact);
 					var_dump($result);
 					if ($result["result"]->result_code == 'KO')
@@ -151,7 +155,8 @@ function synchroClient($id_customer)
 				} else
 				{
 					// Update address
-					echo "update address <br>";
+					echo "<br>update address <br>";
+					$contact->id = $result['contact']->id;
 					$result = $dolibarr->updateContact($contact);
 					if ($result["result"]->result_code == 'KO')
 					{

@@ -38,6 +38,7 @@
 
 class DolibarrContact {
 	public $id;
+	public $ref_ext;
 	public $lastname;
 	public $firstname;
 	public $address;
