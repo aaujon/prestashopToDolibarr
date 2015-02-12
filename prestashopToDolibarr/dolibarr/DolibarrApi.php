@@ -242,7 +242,7 @@ class Dolibarr {
 		  "ref_ext" => $ref_ext
 		);
 
-		$response = $this->client_order->__soapCall("getInvoice", $params);
+		$response = $this->client_invoice->__soapCall("getInvoice", $params);
 		var_dump($response);
 
 		return $response;
@@ -255,19 +255,19 @@ class Dolibarr {
 		);
 
 		var_dump($params);
-		$response = $this->client_order->__soapCall("createInvoice", $params);
+		$response = $this->client_invoice->__soapCall("createInvoice", $params);
 		var_dump($response);
 
 		return $response;
 	}
 
-	public function updateInvoice($order) {
+	public function updateInvoice($invoice) {
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "invoice" => $invoice
 		);
 
-		$response = $this->client_order->__soapCall("updateInvoice", $params);
+		$response = $this->client_invoice->__soapCall("updateInvoice", $params);
 		var_dump($response);
 		return $response;
 	}
