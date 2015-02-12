@@ -74,7 +74,7 @@ class prestashopToDolibarr extends Module {
 			//Configuration::updateValue('stock_doli', $stock_doli);
 
 			// test dolibarr webservices connexion
-			$client = new SoapClient($dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
+			$client = new SoapClient($dolibarr_server_url."/webservices/server_other.php?wsdl");
 				
 			if (is_null($client))
 			{
@@ -82,13 +82,13 @@ class prestashopToDolibarr extends Module {
 			} else
 			{
 				$dolibarr = Dolibarr::getInstance();
-				$response = $dolibarr->getUsers();
+				$response = $dolibarr->getVersions();
 				if ($response["result"]->result_code == 'KO') {
 					$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
 				} else {
 					$testdoliserveur="DOLIBARR : Parametres serveur OK";
 					Configuration::updateValue('validated', '1');
-
+					Configuration::updateValue('dolibarr_version', $response["dolibarr"]);
 				}
 			}
 
@@ -118,6 +118,9 @@ class prestashopToDolibarr extends Module {
 
 		$output = $this->_html;
 		$output .= $this->_displayErrors();
+		$output .= '<fieldset style="width8">
+						<legend>'.$this->l('Informations').'</legend>  
+								   <a>'.$this->l('Dolibar version : ').Configuration::get('dolibarr_version').'</a><br /></fieldset><br /> ';
 		//if (!Tools::isSubmit('action')) {
 			$output .= $this->displayForm();
 		//}
@@ -215,7 +218,7 @@ class prestashopToDolibarr extends Module {
                 array(
                   'type' => 'select',
                   'label' => $this->l('Dolibarr client status'),
-                  'desc' => $this->l('The status client will be in Dolibarr'),
+                  'desc' => $this->l('Status of the client in Dolibarr'),
                   'name' => 'client_status',                     // The content of the 'id' attribute of the <select> tag.
                   'required' => true,                              // If set to true, this option must be set.
                   'options' => array(

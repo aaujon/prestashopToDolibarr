@@ -23,6 +23,7 @@ class Dolibarr {
 	
 	private $authentication;
 	private $dolibarr_server_url;
+	private $client_other;
 	private $client_thirdparty;
 	private $client_contact;
     private $client_product;
@@ -42,6 +43,7 @@ class Dolibarr {
 	private function __construct() {
 		$this->initAuthentication();
 		// init webservice client
+		$this->client_other = new SoapClient($this->dolibarr_server_url."/webservices/server_other.php?wsdl");
 		$this->client_thirdparty = new SoapClient($this->dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
 		$this->client_contact = new SoapClient($this->dolibarr_server_url."/webservices/server_contact.php?wsdl");
 		$this->client_product = new SoapClient($this->dolibarr_server_url."/webservices/server_productorservice.php?wsdl");
@@ -57,10 +59,18 @@ class Dolibarr {
 		}
 		return self::$_instance;
 	}
+	
+    /********** Methods for other **********/
+    public function getVersions() {
+		$params = array(
+		  "authentication" => $this->authentication,
+		);
 
+		return $this->client_other->__soapCall("getVersions", $params);
+	}
+    
     /********** Methods for users **********/
 	public function getUser($ref_ext) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
           "id" => "",
@@ -68,100 +78,77 @@ class Dolibarr {
 		  "ref_ext" => $ref_ext
 		);
 
-		// Invoke webservice
-		$response = $this->client_thirdparty->__soapCall("getThirdParty", $params);
-
-		return $response;
+		return $this->client_thirdparty->__soapCall("getThirdParty", $params);
 	}
 
 	public function createUser($thirdParty) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "thirdparty" => $thirdParty
 		);
 
-		// Invoke webservice
-		$response = $this->client_thirdparty->__soapCall("createThirdParty", $params);
-
-		return $response;
+		return $this->client_thirdparty->__soapCall("createThirdParty", $params);
 	}
 
 	public function updateUser($thirdParty) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "thirdparty" => $thirdParty
 		);
 
-		// Invoke webservice
-		$response = $this->client_thirdparty->__soapCall("updateThirdParty", $params);
-
-		return $response;
+		return $this->client_thirdparty->__soapCall("updateThirdParty", $params);
 	}
 	
 	public function getUsers() {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "filterthirdparty" => ""
 		);
 
-		// Invoke webservice
-		$response = $this->client_thirdparty->__soapCall("getListOfThirdParties", $params);
-
-		return $response;
+		return $this->client_thirdparty->__soapCall("getListOfThirdParties", $params);
 	}
 	
 	/********** Methods for contacts **********/
 	public function getContact($ref_ext) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
           "id" => "",
           "ref_ext" => $ref_ext
 		);
 
-		// Invoke webservice
 		$response = $this->client_contact->__soapCall("getContact", $params);
 
 		return $response;
 	}
 
 	public function createContact($thirdParty) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "contact" => $thirdParty
 		);
 
-		// Invoke webservice
 		$response = $this->client_contact->__soapCall("createContact", $params);
 
 		return $response;
 	}
 
 	public function updateContact($thirdParty) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "contact" => $thirdParty
 		);
 
-		// Invoke webservice
 		$response = $this->client_contact->__soapCall("updateContact", $params);
 
 		return $response;
 	}
 	
 	public function getContactsForThirdParty($id_third_party) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "idthirdparty" => $id_third_party
 		);
 
-		// Invoke webservice
 		$response = $this->client_contact->__soapCall("getListOfContactsForThirdParty", $params);
 
 		return $response;
@@ -170,7 +157,6 @@ class Dolibarr {
     /********** Methods for products **********/
 
 	public function getProduct($ref_ext) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
           "id" => "",
@@ -178,7 +164,6 @@ class Dolibarr {
 		  "ref_ext" => $ref_ext
 		);
 
-		// Invoke webservice
 		$response = $this->client_product->__soapCall("getProductOrService", $params);
 		//var_dump($response);
 
@@ -186,13 +171,11 @@ class Dolibarr {
 	}
 
 	public function createProduct($product) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "product" => $product
 		);
 
-		// Invoke webservice
 		$response = $this->client_product->__soapCall("createProductOrService", $params);
 		//var_dump($response);
 
@@ -200,13 +183,11 @@ class Dolibarr {
 	}
 
 	public function updateProduct($product) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "product" => $product
 		);
 
-		// Invoke webservice
 		$response = $this->client_product->__soapCall("updateProductOrService", $params);
 		//var_dump($response);
 		return $response;
@@ -215,7 +196,6 @@ class Dolibarr {
 	/********** Methods for orders **********/
 
 	public function getOrder($ref_ext) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
           "id" => "",
@@ -223,7 +203,6 @@ class Dolibarr {
 		  "ref_ext" => $ref_ext
 		);
 
-		// Invoke webservice
 		$response = $this->client_order->__soapCall("getOrder", $params);
 		var_dump($response);
 
@@ -231,13 +210,11 @@ class Dolibarr {
 	}
 
 	public function createOrder($order) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "order" => $order
 		);
 		var_dump($params);
-		// Invoke webservice
 		$response = $this->client_order->__soapCall("createOrder", $params);
 		var_dump($response);
 
@@ -245,13 +222,11 @@ class Dolibarr {
 	}
 
 	public function updateOrder($order) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "order" => $order
 		);
 
-		// Invoke webservice
 		$response = $this->client_order->__soapCall("updateOrder", $params);
 		var_dump($response);
 		return $response;
@@ -260,7 +235,6 @@ class Dolibarr {
 	/********** Methods for invoices **********/
 
 	public function getInvoice($ref_ext) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
           "id" => "",
@@ -268,7 +242,6 @@ class Dolibarr {
 		  "ref_ext" => $ref_ext
 		);
 
-		// Invoke webservice
 		$response = $this->client_order->__soapCall("getInvoice", $params);
 		var_dump($response);
 
@@ -276,14 +249,12 @@ class Dolibarr {
 	}
 
 	public function createInvoice($invoice) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "invoice" => $invoice
 		);
 
 		var_dump($params);
-		// Invoke webservice
 		$response = $this->client_order->__soapCall("createInvoice", $params);
 		var_dump($response);
 
@@ -291,13 +262,11 @@ class Dolibarr {
 	}
 
 	public function updateInvoice($order) {
-		// Set parameters for the request
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "invoice" => $invoice
 		);
 
-		// Invoke webservice
 		$response = $this->client_order->__soapCall("updateInvoice", $params);
 		var_dump($response);
 		return $response;
