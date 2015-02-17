@@ -20,7 +20,6 @@ if ($results = Db::getInstance()->ExecuteS($sql))
     foreach ($results as $row)
     {
         $id_customer=$row['id_customer'];
-        echo "Synchronize client : $id_customer";
         synchroClient($id_customer);
     }
 

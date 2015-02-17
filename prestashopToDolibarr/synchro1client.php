@@ -7,7 +7,7 @@ include('dolibarr/DolibarrApi.php');
 
 function synchroClient($id_customer)
 {
-	echo "Synchronisation client : $id_customer<br>"; 
+	echo "<br/>Synchronisation client : $id_customer<br>"; 
 
 	// retrieve params
 	$prefix_ref_client=Configuration::get('prefix_ref_client');
@@ -88,7 +88,7 @@ function synchroClient($id_customer)
 		{
 			foreach ($addresses as $address)
 			{
-				echo "<br/> Synchronize address";
+				echo "<br/> Synchronize address : ";
 				$contact = new DolibarrContact();
 				$contact->socid = $result["id"];
 
