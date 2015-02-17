@@ -536,7 +536,7 @@ function synchroOrder($id_order)
 
 function add_shipping_line($order) {
 	$line = new DolibarrOrderLines();
-	$line->desc = "delivery";
+	$line->desc = Configuration::get('delivery_line_label');
 	$line->qty = 1;
 	$line->unitprice = $order['total_shipping_tax_excl'];
 	$line->remise = 0;
