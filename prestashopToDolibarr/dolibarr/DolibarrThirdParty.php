@@ -34,7 +34,7 @@ class DolibarrThirdParty {
 	public $phone;
 	public $fax;
 	public $email;
-	public $url = "http://www.funkyvinyl.com";
+	public $url;
 	public $profid1;
 	public $profid2;
 	public $profid3;

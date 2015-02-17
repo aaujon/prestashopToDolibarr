@@ -51,6 +51,7 @@ class DolibarrContact {
 	public $country_code;
 	public $country;
 	public $socid;
+    public $status;
 	public $phone_pro;
 	public $fax;
 	public $phone_perso;
@@ -69,7 +70,6 @@ class DolibarrContact {
 	public $user_login;
 	public $civility_id;
 	public $poste = "Prestashop client";
-	public $status = 1;
 	public $statut;
 }
 

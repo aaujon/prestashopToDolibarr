@@ -56,6 +56,7 @@ function synchroClient($id_customer)
 	//$client->zip = $postcode;
 	//$client->country_id = $country;
 	$client->date_modification = new DateTime('NOW');
+	$client->url = _PS_BASE_URL_.__PS_BASE_URI__;
 
 	if ($exists["result"]->result_code == 'NOT_FOUND')
     {

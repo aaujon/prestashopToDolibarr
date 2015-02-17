@@ -81,9 +81,14 @@ function synchroProduct($id_product)
 			echo "Create new product : <br>";
 			var_dump($product);
 			$result = $dolibarr->createProduct($product);
+			
 			if ($result["result"]->result_code == 'KO')
             {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
+				echo "<br>product : " ;
+				var_dump($product);
+				echo "<br>result : " ;
+				var_dump($result);
 			}
 		} else
         {
