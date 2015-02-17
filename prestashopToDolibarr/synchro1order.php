@@ -300,7 +300,7 @@ function synchroOrder($id_order)
 	$dolibarrOrder = new DolibarrOrder();
 	$dolibarrOrder->ref_ext = $id_order;
 	$dolibarrOrder->thirdparty_id = $client["thirdparty"]->id;
-	$dolibarrOrder->fk_delivery_address = $fk_delivery_address;
+	$dolibarrOrder->fk_delivery_address = (int)$fk_delivery_address;
 	$dolibarrOrder->date = $order["date_add"];
 	if ($order['delivery_number'] != 0) {
 		$dolibarrOrder->date_livraison = $order['delivery_date'];
@@ -315,7 +315,9 @@ function synchroOrder($id_order)
     {
 		// Create new order
 		echo "Create new order : <br>";
+		var_dump($dolibarrOrder);
 		$result = $dolibarr->createOrder($dolibarrOrder);
+		var_dump($result);
 		if ($result["result"]->result_code == 'KO')
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
