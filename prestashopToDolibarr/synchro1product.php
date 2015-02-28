@@ -49,6 +49,7 @@ function synchroProduct($id_product)
 		}
 
         $label = $product_data['name'];
+
         // RECUPERATION DES DONNEES DU PRODUIT DANS LA BASE ARTICLES *********************************************
 
         // RECUPERATION ID IMAGE ****************************************************
@@ -69,11 +70,16 @@ function synchroProduct($id_product)
 		$product->description = $description;
 		$product->price_net = $prix_produit_normal_HT;
 		$product->vat_rate = $vat_rate;
+		if ($barcode) {
+			$product->barcode = $barcode;
+			$product->barcode_type = '2'; // 2 = ean13
+		}
 
 		if ($exists["result"]->result_code == 'NOT_FOUND')
         {
 			// Create new product
 			echo "Create new product : <br>";
+			var_dump($product);
 			$result = $dolibarr->createProduct($product);
 			
 			if ($result["result"]->result_code == 'KO')

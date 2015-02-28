@@ -18,10 +18,12 @@ class prestashopToDolibarr extends Module {
     public function install()
     {
         Configuration::updateValue('validated', '0');
+        Configuration::updateValue('client_status', 0);
         Configuration::updateValue('clients_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('products_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('orders_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('invoices_last_synchro', "1970-01-01 00:00:00");
+        Configuration::updateValue('delivery_line_label', "delivery");
 
         if (!parent::install()
             OR !$this->registerHook('footer')
@@ -54,6 +56,7 @@ class prestashopToDolibarr extends Module {
 			$client_status = Tools::getValue('client_status');
 			$prefix_ref_product = Tools::getValue('prefix_ref_product');                                          
 			$product_description = Tools::getValue('product_description');                                          
+			$delivery_line_label = Tools::getValue('delivery_line_label');                                          
 		   
 			Configuration::updateValue('dolibarr_server_url', $dolibarr_server_url);
 			Configuration::updateValue('dolibarr_key', $dolibarr_key);
@@ -63,18 +66,15 @@ class prestashopToDolibarr extends Module {
 			 Configuration::updateValue('dolibarr_password', $dolibarr_password);
 			}
 
-			//Configuration::updateValue('libelle_port', $libelle_port);
-			//Configuration::updateValue('code_article_port', $code_article_port);
 			Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
 			Configuration::updateValue('client_status', $client_status);
 			Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
 			Configuration::updateValue('product_description', $product_description);
+			Configuration::updateValue('delivery_line_label', $delivery_line_label);
 			//Configuration::updateValue('option_image', $option_image);
-			//Configuration::updateValue('decremente', $decremente);
-			//Configuration::updateValue('stock_doli', $stock_doli);
 
 			// test dolibarr webservices connexion
-			$client = new SoapClient($dolibarr_server_url."/webservices/server_thirdparty.php?wsdl");
+			$client = new SoapClient($dolibarr_server_url."/webservices/server_other.php?wsdl");
 				
 			if (is_null($client))
 			{
@@ -82,13 +82,13 @@ class prestashopToDolibarr extends Module {
 			} else
 			{
 				$dolibarr = Dolibarr::getInstance();
-				$response = $dolibarr->getUsers();
+				$response = $dolibarr->getVersions();
 				if ($response["result"]->result_code == 'KO') {
 					$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
 				} else {
 					$testdoliserveur="DOLIBARR : Parametres serveur OK";
 					Configuration::updateValue('validated', '1');
-
+					Configuration::updateValue('dolibarr_version', $response["dolibarr"]);
 				}
 			}
 
@@ -118,6 +118,9 @@ class prestashopToDolibarr extends Module {
 
 		$output = $this->_html;
 		$output .= $this->_displayErrors();
+		$output .= '<fieldset style="width8">
+						<legend>'.$this->l('Informations').'</legend>  
+								   <a>'.$this->l('Dolibar version : ').Configuration::get('dolibarr_version').'</a><br /></fieldset><br /> ';
 		//if (!Tools::isSubmit('action')) {
 			$output .= $this->displayForm();
 		//}
@@ -215,7 +218,7 @@ class prestashopToDolibarr extends Module {
                 array(
                   'type' => 'select',
                   'label' => $this->l('Dolibarr client status'),
-                  'desc' => $this->l('The status client will be in Dolibarr'),
+                  'desc' => $this->l('Status of the client in Dolibarr'),
                   'name' => 'client_status',                     // The content of the 'id' attribute of the <select> tag.
                   'required' => true,                              // If set to true, this option must be set.
                   'options' => array(
@@ -268,6 +271,12 @@ class prestashopToDolibarr extends Module {
                   'id' => 'id_option',
                   'name' => 'name'
                   )
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('delivery line label'),
+                    'name' => 'delivery_line_label',
+                    'required' => false
                 )
             )
         );
@@ -312,7 +321,7 @@ class prestashopToDolibarr extends Module {
         $helper->fields_value['prefix_ref_client'] = Configuration::get('prefix_ref_client');
         $helper->fields_value['prefix_ref_product'] = Configuration::get('prefix_ref_product');
         $helper->fields_value['product_description'] = Configuration::get('product_description');
-
+        $helper->fields_value['delivery_line_label'] = Configuration::get('delivery_line_label');
          
         return $helper->generateForm($fields_form);
     }
@@ -347,37 +356,17 @@ class prestashopToDolibarr extends Module {
                             <br />		
 					</fieldset> 
 					<fieldset style="width8">
-						<legend>'.$this->l('Orders').'</legend>  
+						<legend>'.$this->l('Orders and invoices').'</legend>  
 								   <a>'.$this->l('Last synchronization : ').Configuration::get('orders_last_synchro').', 
-								   '.$this->l('There is ').$nb_orders_to_sync.$this->l(' updated or new orders').'</a><br />
+								   '.$this->l('There is ').$nb_orders_to_sync.$this->l(' updated or new orders or invoices').'</a><br />
                                   <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroorders.php" target="blank" ><b style="color: #000099;">' .
-                                            $this->l('Synchronize updated and new orders').'</b></a><br />
+                                            $this->l('Synchronize updated and new orders or invoices').'</b></a><br />
                                   <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a href="../modules/prestashopToDolibarr/synchroorders.php?action=reset" target="blank" ><b style="color: #000099;">' .
-                                            $this->l('Synchronize all orders').'</b></a><br />
+                                            $this->l('Synchronize all orders and invoices').'</b></a><br />
                             <br />		
 					</fieldset>                 
 			</fieldset>';
-/*								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a>'.$cible_synchrocateg.'<b style="color: #000099;">' .$this->l(' '.$test_texte_synchrocateg.'').'</b></a><br />
-								  <img src="../modules/prestashopToDolibarr/yes.gif" />'.$this->l(' > ').'</a><a '.$cible_synchrostock2presta.' target="blank" ><b style="color: #000099;">' .$this->l(' '.$test_texte_synchrostock2presta.'').'</b></a><br />
-*/
 
-/*$ajax_url = $this->context->link->getAdminLink('AdminModules').'&configure='.$this->name.'&ajax&action=SynchronizeClients';
-                        $output .= '<div id="buttonSynchroniseClients"><button id="ajaxSynchronizeClientsButton">Synchronize clients</button></div>
-                                    <script type="text/javascript">
-                                            $("#buttonSynchroniseClients").on(\'click\', \'#ajaxSynchronizeClientsButton\', function (){
-                                                $.ajax({
-                                                    url: \''.$ajax_url . '\',
-                                                    data: {
-                                                        ajax: true,
-                                                        action: \'SynchronizeClients\',
-                                                    },
-                                                    success: function(output) {
-                                                        document.getElementById(\'buttonSynchroniseClients\').innerHTML += \'<a>\' + output + \'</a>\';
-                                                    }
-                                                }); 
-                                            });
-                                   </script>
-                        ';*/
         return $output;
     }
 

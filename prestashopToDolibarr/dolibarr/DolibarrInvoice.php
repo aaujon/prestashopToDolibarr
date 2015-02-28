@@ -39,8 +39,8 @@ class DolibarrInvoice {
     public $total;
     public $note_private = "Synchronised from Prestashop";
     public $note_public = "";
-    public $status;
-    public $close_code;
+    public $status = 2; // 1 = validated, 2 = paid
+    public $close_code = null; // null mean totally paid
     public $close_note;
     public $project_id;
     public $lines = array(); // array of DolibarrInvoiceLines

@@ -27,6 +27,7 @@ function synchroOrder($id_order)
 	// RECUPERATION DONNEES DE LA COMMANDE ************************************
 	$order = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."orders where id_order='".$id_order."'");
 	$id_customer=$order['id_customer'];
+	$id_address_delivery=$order['id_address_delivery'];
 	$date_order=$order['date_add'];
 	//$ref_client_doli="$label$id_order";
 	$total=$order['total_paid'];
@@ -78,7 +79,7 @@ function synchroOrder($id_order)
 		case 10:
 			$order_status = 0; // draft
 			break;
-		// Paiement accepted
+		// 2 = Paiement accepted
 		case 2:
 			$create_invoice = true;
 			$order_status = 1;           // validated
@@ -86,22 +87,27 @@ function synchroOrder($id_order)
 			//$invoice_status=2;            //** Facture en paiement validé
 			//$paye=1;                      //** Facture en payée
 			break;
-		// En cours de préparation
+		// 3 = En cours de préparation
 		case 3:
 			$create_invoice = true;
-			$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
+			//$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
+			$order_status = 1;
 			break;
-		// in delivery
+		// 4 = in delivery
 		case 4: 
 			$create_invoice = true;
-			$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			//$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
+			$order_status = 1;
+
 			break;
 		// delivered
 		case 5:
 		case 35:
 		case 37:
 			$create_invoice = true;
-			$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			//$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
+			$order_status = 1;
+
 			break;
 		// cancelled or refund
 		case 6:
@@ -222,102 +228,7 @@ function synchroOrder($id_order)
 		}
 	$fk_mode_reglement_commande=$rowid_mode_paiement;
 	// FIN CREATION DU TYPE DE PAIEMENT DANS DOLIBARR *******************************
-
-	// DETERMINATION ID PROPAL DOLIBARR *******************************************
-	$req_id_propal="select max(rowid) from ".$prefix_doli."propal";
-	$req_id_propal=mysql_query($req_id_propal);
-	$id_propal=mysql_result($req_id_propal,0,"max(rowid)");
-	$id_propal=$id_propal+1;
-	$sql_recup_verif_propal="select * from ".$prefix_doli."propal where total='$total_a_payer_TTC' and datec ='".$dateorder."'";
-	$result_verif_propal = mysql_query($sql_recup_verif_propal) or die($sql_recup_verif_propal."<br />\n".mysql_error());
-	$donnees_verif_propal = mysql_fetch_array($result_verif_propal);
-	$verif_propal=$donnees_verif_propal['ref_client'];
-	if ($verif_propal!="")
-		{
-		$rowid_propal=$donnees_verif_propal['rowid'];
-		// CREATION DE LA REFERENCE PROPAL *************************************************
-		$ref_propal=$donnees_verif_propal['ref'];
-		// FIN CREATION DE LA REFERENCE PROPAL *************************************************
-		}
-	if ($verif_propal=="")
-		{
-		$rowid_propal=$id_propal;
-		// CREATION DE LA REFERENCE PROPAL *************************************************
-		$req_dernier_id="select max(rowid) from ".$prefix_doli."propal order by ref asc";
-		$req_dernier_id=mysql_query($req_dernier_id);
-		$dernier_id=mysql_result($req_dernier_id,0,"max(rowid)");
-		$sql_derniere_ref = Db::getInstance()->GetRow("select * from ".$prefix_doli."propal where rowid='$dernier_id'");
-		$derniere_ref=$sql_derniere_ref['ref'];
-		$verif_chrono=substr($derniere_ref,0,2);
-		$chrono=substr($derniere_ref,7,4);
-		$chrono=$chrono+1;
-		$chrono_nnnn=str_pad($chrono, 4, "0", STR_PAD_LEFT);
-		$annee=substr($date_propal,2,2);
-		$mois=substr($date_propal,5,2);
-		$ref="$annee";
-		$ref="$ref$mois-";
-		$ref="PR$ref$chrono_nnnn";
-		}
-		// FIN CREATION DE LA REFERENCE PROPAL *************************************************
-	// FIN DETERMINATION ID PROPAL DOLIBARR *******************************************
 	*/
-	// CREATION DE LA PROPAL ***************************************************
-	/*if ($rowid_client!="")
-		{
-		if ($verif_propal!="")
-			{
-			$info_erreur="Erreur de synchro sur : UPDATE PROPAL - ID PROPAL : $rowid_propal - ID CLIENT : $rowid_client - REF COMMANDE PRESTASHOP : $ref_propal";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("UPDATE ".$prefix_doli."propal set fk_soc='$rowid_client',tms='$dateorder',entity='$entity',ref_client='$ref_client_doli',datec='$dateorder',datep='$date_propal',fin_validite='$dateorder',date_valid='$dateorder',date_cloture='$dateorder',fk_statut='$statut_propal',total_ht='$total_a_payer_HT',tva='$total_taxes',total='$total_a_payer_TTC',fk_mode_reglement='$fk_mode_reglement_commande' where rowid=$rowid_propal") 
-				or die($info_erreur."<br />\n".mysql_error());
-			}
-		if ($verif_propal=="")
-			{
-			$info_erreur="Erreur de synchro sur : INSERT PROPAL - ID PROPAL : $rowid_propal - ID CLIENT : $rowid_client - REF COMMANDE PRESTASHOP : $ref_propal";//or die($info_erreur."<br />\n".mysql_error())
-			mysql_query ("INSERT INTO ".$prefix_doli."propal (rowid,fk_soc,tms,ref,entity,ref_client,datec,datep,fin_validite,date_valid,date_cloture,fk_statut,total_ht,tva,total,fk_cond_reglement,fk_mode_reglement,model_pdf) 
-				VALUES ('$rowid_propal','$rowid_client','$dateorder','$ref','$entity','$ref_client_doli','$dateorder','$date_propal','$dateorder','$dateorder','$dateorder','$statut_propal','$total_a_payer_HT','$total_taxes','$total_a_payer_TTC','$fk_cond_reglement','$fk_mode_reglement','$model_pdf')") 
-					or die($info_erreur."<br />\n".mysql_error());
-			}
-		}
-	// FIN CREATION DE LA PROPAL ***************************************************
-*/
-	// DETERMINATION ID COMMANDE DOLIBARR *******************************************
-	/*$req_id_commande="select max(rowid) from ".$prefix_doli."commande";
-	$req_id_commande=mysql_query($req_id_commande);
-	$id_commande=mysql_result($req_id_commande,0,"max(rowid)");
-	$id_commande=$id_commande+1;
-	$sql_recup_verif_commande="select * from ".$prefix_doli."commande where total_ttc='$total_a_payer_TTC' and date_creation ='".$dateorder."'";
-	$result_verif_commande = mysql_query($sql_recup_verif_commande) or die($sql_recup_verif_commande."<br />\n".mysql_error());
-	$donnees_verif_commande = mysql_fetch_array($result_verif_commande);
-	$verif_commande=$donnees_verif_commande['ref_client'];
-	if ($verif_commande!="")
-		{
-		$rowid_commande=$donnees_verif_commande['rowid'];
-		// CREATION DE LA REFERENCE COMMANDE *************************************************
-		$ref_commande=$donnees_verif_commande['ref'];
-		// FIN CREATION DE LA REFERENCE COMMANDE *************************************************
-		}
-	if ($verif_commande=="")
-		{
-		$rowid_commande=$id_commande;
-		// CREATION DE LA REFERENCE COMMANDE *************************************************
-		$req_dernier_id="select max(rowid) from ".$prefix_doli."commande order by ref asc";
-		$req_dernier_id=mysql_query($req_dernier_id);
-		$dernier_id=mysql_result($req_dernier_id,0,"max(rowid)");
-		$sql_derniere_ref = Db::getInstance()->GetRow("select * from ".$prefix_doli."commande where rowid='$dernier_id'");
-		$derniere_ref=$sql_derniere_ref['ref'];
-		$verif_chrono=substr($derniere_ref,0,2);
-		$chrono=substr($derniere_ref,7,4);
-		$chrono=$chrono+1;
-		$chrono_nnnn=str_pad($chrono, 4, "0", STR_PAD_LEFT);
-		$annee=substr($date_commande,2,2);
-		$mois=substr($date_commande,5,2);
-		$ref="$annee";
-		$ref="$ref$mois-";
-		$ref="CO$ref$chrono_nnnn";
-		}
-		// FIN CREATION DE LA REFERENCE COMMANDE *************************************************
-	// FIN DETERMINATION ID COMMANDE DOLIBARR *******************************************
-*/
 
 	// load order details
 	$products = Db::getInstance()->executeS("select * from "._DB_PREFIX_."order_detail where id_order='".$id_order."'");
@@ -354,24 +265,42 @@ function synchroOrder($id_order)
 	$lines[$count]= add_shipping_line($order);
 
 	$dolibarr = Dolibarr::getInstance();
-	
-	var_dump($prefix_ref_client.$id_customer);
+
 	// retrieve user
+	echo "<br> Client : ";
+	var_dump($id_customer);
 	$client = $dolibarr->getUser("PSUSER-".$id_customer);
 	if ($client["result"]->result_code == 'NOT_FOUND')
     {
-		echo "Error : client doesn't exist. Try to synchronize clients first.";
+		echo "<br />Error : client doesn't exist. Try to synchronize clients first.";
 		return;
 	}
+	echo ", ";
 	var_dump($client["thirdparty"]->id);
+	
+	echo "<br> Address : ";
+	var_dump($id_address_delivery);
+	// retrieve address
+	$address = $dolibarr->getContact($id_address_delivery);
+	if ($address["result"]->result_code == 'NOT_FOUND')
+    {
+		echo "<br />Error : client address doesn't exist. Try to synchronize clients first.";
+		return;
+	}
+	$fk_delivery_address = $address["contact"]->id;
+	echo ", ";
+	var_dump($address["contact"]->id);
+	var_dump($fk_delivery_address);
+
 
 	// Check if already exists in Dolibarr
 	$exists = $dolibarr->getOrder($id_order);
-	
+
 	// Create order
 	$dolibarrOrder = new DolibarrOrder();
 	$dolibarrOrder->ref_ext = $id_order;
 	$dolibarrOrder->thirdparty_id = $client["thirdparty"]->id;
+	$dolibarrOrder->fk_delivery_address = (int)$fk_delivery_address;
 	$dolibarrOrder->date = $order["date_add"];
 	if ($order['delivery_number'] != 0) {
 		$dolibarrOrder->date_livraison = $order['delivery_date'];
@@ -386,40 +315,78 @@ function synchroOrder($id_order)
     {
 		// Create new order
 		echo "Create new order : <br>";
+		var_dump($dolibarrOrder);
 		$result = $dolibarr->createOrder($dolibarrOrder);
+		var_dump($result);
 		if ($result["result"]->result_code == 'KO')
         {
-			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+			echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
 		}
 	} else
     {
-		// Update order
-		echo "update order<br>";
-		$oldOrder = $exists["order"];
-		$dolibarrOrder->id = $oldOrder->id;
-		$result = $dolibarr->updateUser($dolibarrOrder);
-		if ($result["result"]->result_code == 'KO')
-        {
-			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+		if (strpos(Configuration::get('dolibarr_version'), '3.6.') !== FALSE) {
+			echo "<br />Dolibarr version 3.6 can't update orders, skip update. Please consider updating Dolibarr to have a full synchronisation.";
+		} else {
+			// Update order
+			echo "<br />update order<br>";
+			$oldOrder = $exists["order"];
+			$dolibarrOrder->id = $oldOrder->id;
+			$result = $dolibarr->updateOrder($dolibarrOrder);
+			if ($result["result"]->result_code == 'KO')
+			{
+				echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
+			}
 		}
 	}
-	
+
 	// Create invoice if necessary
 	if ($create_invoice)
 	{
+		echo "<br />Creating invoice.<br />";
+		//invoices dont really exists in prestashop, so id_order=id_invoice
+		$exists = $dolibarr->getInvoice($id_order);
+
 		$dolibarrInvoice = new DolibarrInvoice();
 		$dolibarrInvoice->ref_ext = $id_order;
 		$dolibarrInvoice->thirdparty_id = $client["thirdparty"]->id;
 		$dolibarrInvoice->date = $order["date_add"];
+		$dolibarrInvoice->total = $total;
+		$dolibarrInvoice->total_net = $total_net;
+		$dolibarrInvoice->total_vat = $total_vat;
 		if ($order['delivery_number'] != 0) {
 			$dolibarrInvoice->date_livraison = $order['delivery_date'];
 		}
-		$dolibarrInvoice->status = $order_status;
 		$dolibarrInvoice->lines = $lines;
+		
+		if ($exists["result"]->result_code == 'NOT_FOUND')
+		{
+			// Create new invoice
+			echo "Create new invoice : <br>";
+			$result = $dolibarr->createInvoice($dolibarrInvoice);
+			if ($result["result"]->result_code == 'KO')
+			{
+				echo "Erreur de synchronisation : ".$result["result"]->result_label;
+			}
+		} else
+		{
+			if (strpos(Configuration::get('dolibarr_version'), '3.6.') !== FALSE) {
+				echo "<br />Dolibarr version 3.6 can't update invoices, skip update. Please consider updating Dolibarr to have a full synchronisation.";
+			} else {
+				// Update invoice
+				echo "update invoice<br>";
+				$oldInvoice = $exists["invoice"];
+				$dolibarrInvoice->id = $oldInvoice->id;
+				$result = $dolibarr->updateInvoice($dolibarrInvoice);
+				if ($result["result"]->result_code == 'KO')
+				{
+					echo "Erreur de synchronisation : ".$result["result"]->result_label;
+				}
+			}
+		}
 	}
-	
+
 	// mark as paid
-	
+
 	/*
 	// ECRITURE DU PAIEMENT SI POSSIBLE ***********************************************************
 	if ($create_invoice)
@@ -569,7 +536,7 @@ function synchroOrder($id_order)
 
 function add_shipping_line($order) {
 	$line = new DolibarrOrderLines();
-	$line->desc = "delivery";
+	$line->desc = Configuration::get('delivery_line_label');
 	$line->qty = 1;
 	$line->unitprice = $order['total_shipping_tax_excl'];
 	$line->remise = 0;
@@ -577,7 +544,7 @@ function add_shipping_line($order) {
 	$line->total_net = $order['total_shipping_tax_excl'];
 	$line->total = $order['total_shipping_tax_incl'];
 	$line->total_vat = 	sprintf("%.2f", $order['total_shipping_tax_incl'] - $order['total_shipping_tax_excl']);
-	
+
 	// compute vat_rate
 	if ($order['total_shipping_tax_excl'] == 0 || $order['total_shipping_tax_incl'] == 0) {
 		$line->vat_rate = 0;
@@ -589,7 +556,7 @@ function add_shipping_line($order) {
 			$line->vat_rate = 10;
 		}
 	}
-	
+
 	return $line;
 }
 

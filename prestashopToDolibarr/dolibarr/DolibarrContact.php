@@ -38,6 +38,7 @@
 
 class DolibarrContact {
 	public $id;
+	public $ref_ext;
 	public $lastname;
 	public $firstname;
 	public $address;
@@ -50,7 +51,7 @@ class DolibarrContact {
 	public $country_code;
 	public $country;
 	public $socid;
-	public $status;
+    public $status;
 	public $phone_pro;
 	public $fax;
 	public $phone_perso;
@@ -68,7 +69,7 @@ class DolibarrContact {
 	public $user_id;
 	public $user_login;
 	public $civility_id;
-	public $poste;
+	public $poste = "Prestashop client";
 	public $statut;
 }
 
