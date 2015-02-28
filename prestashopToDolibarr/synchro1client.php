@@ -91,8 +91,9 @@ function synchroClient($id_customer)
 				echo "<br/> Synchronize address : ";
 				$contact = new DolibarrContact();
 				$contact->socid = $result["id"];
+                $contact->statut = $client_status;
 
-				$contact->ref_ext=$address['id_address'];
+				$contact->ref_ext= $address['id_address'];
 				$contact->lastname = $address['lastname'];
 				$contact->firstname = $address['firstname'];
 				$address1=$address['address1'];
@@ -159,6 +160,7 @@ function synchroClient($id_customer)
 					echo "<br>update address <br>";
 					$contact->id = $result['contact']->id;
 					$result = $dolibarr->updateContact($contact);
+                    var_dump($result);
 					if ($result["result"]->result_code == 'KO')
 					{
 						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
