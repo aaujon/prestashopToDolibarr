@@ -70,7 +70,7 @@ class DolibarrContact {
 	public $user_login;
 	public $civility_id;
 	public $poste = "Prestashop client";
-	public $statut;
+	public $status;
 }
 
 ?>
