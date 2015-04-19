@@ -8,28 +8,13 @@ include('dolibarr/DolibarrApi.php');
 function synchroOrder($id_order)
 {
 	echo "Synchronisation order : $id_order<br>"; 
-
-	//$prefix_ref_client=Configuration::get('prefix_ref_client');
-	//$prefix_ref_client = accents_sans("$prefix_ref_client");
 	
-	// DEFINITION DE DONNEES *****************************************
-	$total_article=0;
-	$rang=0;
-	$entity=1;
-	$fk_cond_reglement=6;
-	$fk_mode_reglement=6;
-	$source=1;
-	$fk_cond_reglement_commande=1;
-	$type_doli=2;
-	$active=1;
-	// FIN DEFINITION DE DONNEES *****************************************
 
-	// RECUPERATION DONNEES DE LA COMMANDE ************************************
+	// Retrieve order information
 	$order = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."orders where id_order='".$id_order."'");
 	$id_customer=$order['id_customer'];
 	$id_address_delivery=$order['id_address_delivery'];
 	$date_order=$order['date_add'];
-	//$ref_client_doli="$label$id_order";
 	$total=$order['total_paid'];
 	$total = sprintf("%.2f",$total);
 	//$total_paid_real_TTC=$order['total_paid_real'];
@@ -60,8 +45,6 @@ function synchroOrder($id_order)
 		return;
 	}
 
-	// FIN RECUPERATION DONNEES DE LA COMMANDE ************************************
-
 	// get order status
 	$create_invoice = false;
 	$statut_propal=4;       //** Propal validée signée
@@ -79,44 +62,39 @@ function synchroOrder($id_order)
 		case 10:
 			$order_status = 0; // draft
 			break;
-		// 2 = Paiement accepted
-		case 2:
+		case 2: // Paiement accepted
 			$create_invoice = true;
 			$order_status = 1;           // validated
 			//$commande_facturee=1;         //** Commande facturée
 			//$invoice_status=2;            //** Facture en paiement validé
 			//$paye=1;                      //** Facture en payée
 			break;
-		// 3 = En cours de préparation
-		case 3:
+		case 3: // En cours de préparation
 			$create_invoice = true;
 			//$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
 			$order_status = 1;
 			break;
-		// 4 = in delivery
-		case 4: 
+		case 4: // In delivery
 			$create_invoice = true;
 			//$order_status = 3;           //** Commande en Délivrée (Expédition effectuée)
 			$order_status = 1;
 
 			break;
-		// delivered
-		case 5:
-		case 35:
-		case 37:
+		
+		case 5: // delivered
+		case 35: // delivered
+		case 37: // delivered
 			$create_invoice = true;
 			//$order_status=3;           //** Commande en Délivrée (Et la commande est en : Facturée donc Commande passe en : Traitée)
 			$order_status = 1;
 
 			break;
-		// cancelled or refund
-		case 6:
-		case 7:
+		case 6: // cancelled or refund
+		case 7: // cancelled or refund
 			//$order_status = 0; // due to current dolibarr limitation using webservices
 			$order_status='-1';        // canceled
 			break;
-		// paiement error or not validated
-		case 8: 
+		case 8: // paiement error or not validated
 			$order_status=0;           // draft
 			break;
 	}
