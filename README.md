@@ -7,6 +7,7 @@ Dolibarr API is used, so you can have a prestashop and a dolibarr intalled on a 
 To make it work you need :
 * PrestaShop 1.5.x and 1.6.x
 * Dolibarr >= 3.6.3 (not release yet). This is because prior version contains bugs that prevent the module from working properly.
+* php-soap module on your serveur
 
 
 You need to active Dolibarr webservice to allow prestashop to communicate with your dolibarr instance.
