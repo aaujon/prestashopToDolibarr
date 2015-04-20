@@ -161,7 +161,7 @@ function synchroOrder($id_order)
 	if ($order['delivery_number'] != 0) {
 		$dolibarrOrder->date_livraison = $order['delivery_date'];
 	}
-	$dolibarrOrder->status = $order_status;
+	$dolibarrOrder->status = 1; // we start with status validated, we wiil update status after if needed
 	/*$dolibarrOrder->total = $total;
     $dolibarrOrder->total_net = $total_net;
     $dolibarrOrder->total_vat = $total_v;*/
@@ -178,22 +178,25 @@ function synchroOrder($id_order)
         {
 			echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
 		}
-	} else
-    {
-		if (strpos(Configuration::get('dolibarr_version'), '3.6.') !== FALSE) {
-			echo "<br />Dolibarr version 3.6 can't update orders, skip update. Please consider updating Dolibarr to 3.7 to have a full synchronisation.";
-		} else {
-			// Update order
-			echo "<br />update order<br>";
-			$oldOrder = $exists["order"];
-			$dolibarrOrder->id = $oldOrder->id;
-			$result = $dolibarr->updateOrder($dolibarrOrder);
-			if ($result["result"]->result_code == 'KO')
-			{
-				echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
-			}
+	}
+
+	// update it now to have a correct status
+    
+	if (strpos(Configuration::get('dolibarr_version'), '3.6.') !== FALSE) {
+		echo "<br />Dolibarr version 3.6 can't update orders, skip update. Please consider updating Dolibarr to 3.7 to have a full synchronisation.";
+	} else {
+		// Update order status
+		echo "<br />update order<br>";
+		$oldOrder = $exists["order"];
+		$dolibarrOrder->status = $order_status;
+
+		$result = $dolibarr->updateOrder($dolibarrOrder);
+		if ($result["result"]->result_code == 'KO')
+		{
+			echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
 		}
 	}
+	
 
 	// Create invoice if necessary
 	if ($create_invoice)
