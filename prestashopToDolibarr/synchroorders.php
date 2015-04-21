@@ -16,15 +16,31 @@ echo "Synchronisation of orders begins for modification since ".$last_synchro."<
 
 
 $sql="select * from "._DB_PREFIX_."orders where date_upd > '".$last_synchro."'";
+$anErrorOccured = false;
 if ($results = Db::getInstance()->ExecuteS($sql))
     foreach ($results as $row)
     {
         $id_order=$row['id_order'];
-        echo "Synchronize product : $id_order";
-        synchroOrder($id_order);
+        echo "Synchronize order : $id_order";
+        $isOk =synchroOrder($id_order);
+        if (!$isOk) {
+			$anErrorOccured = true;
+			echo "Error<br/>";
+		} else {
+			echo "OK<br/>";
+		}
+		
     }
 
 echo "Synchronisation of orders done<br>";
-Configuration::updateValue('orders_last_synchro',  (new DateTime('NOW'))->format("Y-m-d H:i:s"));
+if ($anErrorOccured)
+{
+	echo "Some synchronisation failed, check log<br>";
+}
+else 
+{
+	$time = new DateTime('NOW');
+	Configuration::updateValue('orders_last_synchro',  $time->format("Y-m-d H:i:s"));
+}
 
 ?>

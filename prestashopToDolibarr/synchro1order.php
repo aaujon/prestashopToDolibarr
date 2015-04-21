@@ -42,7 +42,7 @@ function synchroOrder($id_order)
 	
 	if ($valid == 0) {
 		echo "order is not valid. skip it.";
-		return;
+		return true;
 	}
 
 	// get order status
@@ -96,7 +96,7 @@ function synchroOrder($id_order)
 	// For now, we only want to synchonize orders that have been validated and paid
 	if ($order_status <= 0) {
 		echo "<br />Error : order isn't valid. Status ==".$order_status;
-		return;
+		return true;
 	}
 
 	// load order details
@@ -138,7 +138,7 @@ function synchroOrder($id_order)
 	if ($client["result"]->result_code == 'NOT_FOUND')
     {
 		echo "<br />Error : client doesn't exist. Try to synchronize clients first.";
-		return;
+		return false;
 	}
 	echo ", ";
 	var_dump($client["thirdparty"]->id);
@@ -148,6 +148,10 @@ function synchroOrder($id_order)
 	
 	// Retrieve delivery address
 	$fk_delivery_address = retrieveDeliveryAddress($dolibarr, $id_address_delivery);
+	if ($fk_delivery_address == false) {
+		return false;
+	}
+		
 
 	// Check if already exists in Dolibarr
 	$exists = $dolibarr->getOrder($id_order);
@@ -201,7 +205,7 @@ function synchroOrder($id_order)
 	// Create invoice if necessary
 	if ($create_invoice)
 	{
-		echo "<br />Creating invoice.<br />";
+		echo "<br />Creating invoice if needed.<br />";
 		//invoices dont really exists in prestashop, so id_order=id_invoice
 		$exists = $dolibarr->getInvoice($id_order);
 
@@ -226,24 +230,14 @@ function synchroOrder($id_order)
 			{
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
-		} else
+		}
+		else
 		{
-			if (strpos(Configuration::get('dolibarr_version'), '3.6.') !== FALSE) {
-				echo "<br />Dolibarr version 3.6 can't update invoices, skip update. Please consider updating Dolibarr to have a full synchronisation.";
-			} else {
-				// Update invoice
-				echo "update invoice<br>";
-				$oldInvoice = $exists["invoice"];
-				$dolibarrInvoice->id = $oldInvoice->id;
-				$result = $dolibarr->updateInvoice($dolibarrInvoice);
-				if ($result["result"]->result_code == 'KO')
-				{
-					echo "Erreur de synchronisation : ".$result["result"]->result_label;
-				}
-			}
+			echo "Invoice already exists.";
 		}
 	}
 
+	return true;
 	// mark as paid
 
 }
@@ -258,7 +252,7 @@ function retrieveDeliveryAddress($dolibarr, $addressDeliveryId) {
 	if ($address["result"]->result_code == 'NOT_FOUND')
     {
 		echo "<br />Error : client address doesn't exist. Try to synchronize clients first.";
-		return;
+		return false;
 	}
 	$fk_delivery_address = $address["contact"]->id;
 	echo ", ";

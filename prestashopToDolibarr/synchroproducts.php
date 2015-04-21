@@ -27,7 +27,8 @@ if ($results = Db::getInstance()->ExecuteS($sql))
     }
 
 echo "Synchronisation of products done<br>";
-Configuration::updateValue('products_last_synchro',  (new DateTime('NOW'))->format("Y-m-d H:i:s"));
+$time = new DateTime('NOW');
+Configuration::updateValue('products_last_synchro',  $time->format("Y-m-d H:i:s"));
 
 
 function synchroProduct($id_product)

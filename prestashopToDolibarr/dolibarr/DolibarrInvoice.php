@@ -15,6 +15,7 @@ class DolibarrInvoiceLines {
     public $total;
 	public $date_start = ""; // dateTime
 	public $date_end = ""; // dateTime
+	public $payment_mode_id = ""; // unused
 	public $product_id = "";
 	public $product_ref = "";
 	public $product_label = "";
@@ -33,6 +34,7 @@ class DolibarrInvoice {
 	public $date_creation = ""; // dateTime
 	public $date_validation = ""; // dateTime
 	public $date_modification = ""; // dateTime
+	//payment_mode_id
     public $type = "";
     public $total_net;
     public $total_vat;

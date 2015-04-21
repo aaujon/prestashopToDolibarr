@@ -109,11 +109,13 @@ class Dolibarr {
 	}
 	
 	/********** Methods for contacts **********/
-	public function getContact($ref_ext) {
+	public function getContact($id) {
+		// as of Dolibarr 3.7, it doesn't use ref_ext, so use id here
 		$params = array(
 		  "authentication" => $this->authentication,
-          "id" => "",
-          "ref_ext" => $ref_ext
+          "id" => $id, 
+          "ref" => "",
+          "ref_ext" => ""
 		);
 
 		$response = $this->client_contact->__soapCall("getContact", $params);
