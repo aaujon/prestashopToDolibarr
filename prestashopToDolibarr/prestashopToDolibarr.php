@@ -83,12 +83,12 @@ class prestashopToDolibarr extends Module {
 			{
 				$dolibarr = Dolibarr::getInstance();
 				$response = $dolibarr->getVersions();
-				if ($response["result"]->result_code == 'KO') {
-					$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
-				} else {
+				if ($response["result"]->result_code == 'OK') {
 					$testdoliserveur="DOLIBARR : Parametres serveur OK";
 					Configuration::updateValue('validated', '1');
 					Configuration::updateValue('dolibarr_version', $response["dolibarr"]);
+				} else {
+					$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
 				}
 			}
 
