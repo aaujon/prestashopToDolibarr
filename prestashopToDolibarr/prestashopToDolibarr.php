@@ -1,4 +1,6 @@
 <?php
+include_once(dirname(__FILE__).'/dolibarr/DolibarrApi.php');
+
 class prestashopToDolibarr extends Module {
     private	$_html = '';
     private $_postErrors = array();
@@ -38,13 +40,12 @@ class prestashopToDolibarr extends Module {
     public function uninstall()
     {
 	    Configuration::updateValue('validated', '0');
+	    Dolibarr::reset();
         parent::uninstall();
     }
         
     public function getContent()
     {
-	    include_once(dirname(__FILE__).'/dolibarr/DolibarrApi.php');
-
 		if (Tools::getValue('submit'.$this->name) == "1")
 		{
 			$dolibarr_server_url = Tools::getValue('dolibarr_server_url');

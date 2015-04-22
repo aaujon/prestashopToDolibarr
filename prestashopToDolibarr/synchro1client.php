@@ -40,7 +40,6 @@ function synchroClient($id_customer)
 
 	// Check if already exists in Dolibarr
 	$exists = $dolibarr->getUser("PSUSER-".$id_customer);
-	var_dump($exists);
 		
 	$client = new DolibarrThirdParty();
 	$client->ref_ext = "PSUSER-".$id_customer;
@@ -94,7 +93,7 @@ function synchroClient($id_customer)
 			{
 				echo "<br/> Synchronize address : ";
 				$contact = new DolibarrContact();
-				$contact->id= $address['id_address'];
+				$contact->ref_ext= $address['id_address'];
 				$contact->socid = $result["id"];
                 $contact->statut = $client_status;
 				$contact->lastname = $address['lastname'];
@@ -142,7 +141,7 @@ function synchroClient($id_customer)
 				public $ref_propal;
 				public $user_id;
 				public $user_login;*/
-				echo "Get Contact :".$contact->id."<br>";
+				echo "Get Contact :".$contact->ref_ext."<br>";
 				
 				$result = $dolibarr->getContact($contact->id);
 				var_dump($result);
@@ -160,6 +159,10 @@ function synchroClient($id_customer)
 				{
 					// Update address
 					echo "<br>update address <br>";
+					if (version_compare(Configuration::get('dolibarr_version'), '3.7') < 0) {
+						$contact->id = $result["contact"]->id; // in < 3.7, we can't update contact using it's ref_ext so we use id
+					}
+					
 					$result = $dolibarr->updateContact($contact);
                     var_dump($result);
 					if ($result["result"]->result_code != 'OK')

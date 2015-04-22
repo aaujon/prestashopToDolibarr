@@ -60,6 +60,10 @@ class Dolibarr {
 		return self::$_instance;
 	}
 	
+	public static function reset() {
+		self::$_instance = null;
+	}
+	
     /********** Methods for other **********/
     public function getVersions() {
 		$params = array(
@@ -109,13 +113,11 @@ class Dolibarr {
 	}
 	
 	/********** Methods for contacts **********/
-	public function getContact($id) {
-		// as of Dolibarr 3.7, it doesn't use ref_ext, so use id here
+	public function getContact($ref_ext) {
 		$params = array(
 		  "authentication" => $this->authentication,
-          "id" => $id, 
-          "ref" => "",
-          "ref_ext" => ""
+          "id" => "", 
+          "ref_ext" => $ref_ext
 		);
 
 		$response = $this->client_contact->__soapCall("getContact", $params);

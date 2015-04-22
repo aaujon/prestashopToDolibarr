@@ -9,6 +9,11 @@ if ($validated == 0) {
 	return;
 }
 
+if (version_compare(Configuration::get('dolibarr_version'), '3.7') == -1) {
+		echo "<br />Your version of Dolibarr can't synchronize orders properly. Please consider updating Dolibarr to 3.7.0 or higher to have a full synchronisation.";
+		return;
+}
+
 // action if reset synchronization
 if (Tools::isSubmit('action')) {
     $action=Tools::getValue('action');
