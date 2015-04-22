@@ -5,6 +5,12 @@ include('../../config/config.inc.php');
 include('stringUtils.php');
 include('dolibarr/DolibarrApi.php');
 
+$validated = Configuration::get('validated');
+if ($validated == 0) {
+	echo "PrestashopToDolibarr module is not properly configured (probably server url, login or password). Glease go to module configuration page to fix it.";
+	return;
+}
+
 // action if reset synchronization
 if (Tools::isSubmit('action')) {
     $action=Tools::getValue('action');

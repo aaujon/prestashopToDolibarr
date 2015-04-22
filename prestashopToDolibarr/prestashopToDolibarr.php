@@ -78,23 +78,25 @@ class prestashopToDolibarr extends Module {
 				
 			if (is_null($client))
 			{
-				$testdoliserveur="DOLIBARR : Paramètres incorrectes : vérifez l'adresse du serveur et que les webservices sont bien activés.<br>Arret du TEST";
+				Configuration::updateValue('validated', '0');
+				$testdoliserveur=$this->l("DOLIBARR : Paramètres incorrectes : vérifez l'adresse du serveur et que les webservices sont bien activés.<br>");
 			} else
 			{
 				$dolibarr = Dolibarr::getInstance();
 				$response = $dolibarr->getVersions();
 				if ($response["result"]->result_code == 'OK') {
-					$testdoliserveur="DOLIBARR : Parametres serveur OK";
+					$testdoliserveur=$this->l("DOLIBARR : Server parameters OK");
 					Configuration::updateValue('validated', '1');
 					Configuration::updateValue('dolibarr_version', $response["dolibarr"]);
 				} else {
-					$testdoliserveur="DOLIBARR : url serveur correctes. Vérifez la clé api, le login et le password.";
+					Configuration::updateValue('validated', '0');
+					$testdoliserveur=$this->l("DOLIBARR : Wrong server parameters. Check api key, login or password.");
 				}
 			}
 
 			$validated = Configuration::get('validated');
 			
-			if($validated!='1')
+			if($validated != '1')
 			{
 				$this->_html .= '
 				<div class="alert error">
@@ -104,7 +106,8 @@ class prestashopToDolibarr extends Module {
 				<b style="color: #000033;">'.$this->l($testdoliserveur).'</b><br />
 				</fieldset>
 				</div>';     
-			} else {
+			} else
+			{
 				$this->_html .= '
 				<div class="conf confirm">
 				<img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />
