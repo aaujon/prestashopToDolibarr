@@ -26,7 +26,7 @@ $last_synchro = Configuration::get('clients_last_synchro');
 echo "Synchronisation of clients begins for modification since ".$last_synchro."<br>";
 
 
-$sql="select * from "._DB_PREFIX_."customer where date_upd > '".$last_synchro."'";
+$sql="select id_customer from "._DB_PREFIX_."customer where date_upd > '".$last_synchro."'";
 if ($results = Db::getInstance()->ExecuteS($sql))
     foreach ($results as $row)
     {

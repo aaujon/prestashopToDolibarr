@@ -23,7 +23,7 @@ $last_synchro = Configuration::get('products_last_synchro');
 echo "Synchronisation of products begins for modification since ".$last_synchro."<br>";
 
 
-$sql="select * from "._DB_PREFIX_."product where date_upd > '".$last_synchro."'";
+$sql="select id_product from "._DB_PREFIX_."product where date_upd > '".$last_synchro."'";
 if ($results = Db::getInstance()->ExecuteS($sql))
     foreach ($results as $row)
     {
