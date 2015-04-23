@@ -1,12 +1,13 @@
 prestashopToDolibarr
 ====================
 
-A Prestashop module to synchronise clients, products and invoices to Dolibarr.
+A Prestashop module to synchronise clients, products, orders and invoices to Dolibarr.
 Dolibarr API is used, so you can have a prestashop and a dolibarr intalled on a different server.
 
 To make it work you need :
 * PrestaShop 1.5.x and 1.6.x
-* Dolibarr >= 3.6.3 (not release yet). This is because prior version contains bugs that prevent the module from working properly.
+* Dolibarr >= 3.6.3 to synchronize clients and products
+* Dolibarr >= 3.7.0 to synchronize orders
 * php-soap module on your serveur
 
 
