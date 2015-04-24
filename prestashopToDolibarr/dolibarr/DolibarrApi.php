@@ -1,15 +1,5 @@
 <?php
-/*
-Methods: 
-llx_array(4) {
- [0]=> string(132) "list(result $result, thirdparty $thirdparty) getThirdParty(authentication $authentication, string $id, string $ref, string $ref_ext)" 
- [1]=> string(118) "list(result $result, string $id, string $ref) createThirdParty(authentication $authentication, thirdparty $thirdparty)" 
- [2]=> string(105) "list(result $result, string $id) updateThirdParty(authentication $authentication, thirdparty $thirdparty)" 
- [3]=> string(144) "list(result $result, ThirdPartiesArray2 $thirdparties) getListOfThirdParties(authentication $authentication, filterthirdparty $filterthirdparty)" 
-} 
-*/
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+
 include('DolibarrThirdParty.php');
 include('DolibarrContact.php');
 include('DolibarrProduct.php');
@@ -49,8 +39,6 @@ class Dolibarr {
 		$this->client_product = new SoapClient($this->dolibarr_server_url."/webservices/server_productorservice.php?wsdl");
 		$this->client_order = new SoapClient($this->dolibarr_server_url."/webservices/server_order.php?wsdl");
 		$this->client_invoice = new SoapClient($this->dolibarr_server_url."/webservices/server_invoice.php?wsdl");
-		//var_dump($this->client_product);
-		//var_dump($this->client_product->__getFunctions());
 	}
 
 	public static function getInstance() {
@@ -120,9 +108,7 @@ class Dolibarr {
           "ref_ext" => $ref_ext
 		);
 
-		$response = $this->client_contact->__soapCall("getContact", $params);
-
-		return $response;
+		return $this->client_contact->__soapCall("getContact", $params);
 	}
 
 	public function createContact($thirdParty) {
@@ -131,9 +117,7 @@ class Dolibarr {
 		  "contact" => $thirdParty
 		);
 
-		$response = $this->client_contact->__soapCall("createContact", $params);
-
-		return $response;
+		return $this->client_contact->__soapCall("createContact", $params);
 	}
 
 	public function updateContact($thirdParty) {
@@ -142,9 +126,7 @@ class Dolibarr {
 		  "contact" => $thirdParty
 		);
 
-		$response = $this->client_contact->__soapCall("updateContact", $params);
-
-		return $response;
+		return $this->client_contact->__soapCall("updateContact", $params);
 	}
 	
 	public function getContactsForThirdParty($id_third_party) {
@@ -153,9 +135,7 @@ class Dolibarr {
 		  "idthirdparty" => $id_third_party
 		);
 
-		$response = $this->client_contact->__soapCall("getListOfContactsForThirdParty", $params);
-
-		return $response;
+		return $this->client_contact->__soapCall("getListOfContactsForThirdParty", $params);
 	}
 
     /********** Methods for products **********/
@@ -168,10 +148,7 @@ class Dolibarr {
 		  "ref_ext" => $ref_ext
 		);
 
-		$response = $this->client_product->__soapCall("getProductOrService", $params);
-		//var_dump($response);
-
-		return $response;
+		return $this->client_product->__soapCall("getProductOrService", $params);
 	}
 
 	public function createProduct($product) {
@@ -180,10 +157,7 @@ class Dolibarr {
 		  "product" => $product
 		);
 
-		$response = $this->client_product->__soapCall("createProductOrService", $params);
-		//var_dump($response);
-
-		return $response;
+		return $this->client_product->__soapCall("createProductOrService", $params);
 	}
 
 	public function updateProduct($product) {
@@ -192,9 +166,7 @@ class Dolibarr {
 		  "product" => $product
 		);
 
-		$response = $this->client_product->__soapCall("updateProductOrService", $params);
-		//var_dump($response);
-		return $response;
+		return $this->client_product->__soapCall("updateProductOrService", $params);
 	}
 	
 	/********** Methods for orders **********/

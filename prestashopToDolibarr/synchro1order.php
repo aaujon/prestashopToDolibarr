@@ -36,8 +36,7 @@ function synchroOrder($id_order)
 
 	$total_shipping_TVA = $total_shipping_TTC - $total_shipping_HT;
 	$total_shipping_TVA=sprintf("%.2f",$total_shipping_TVA);
-	$type_paiement = $order['payment'];
-	$type_paiement = accents_minuscules("$type_paiement");   
+	$payment_type = $order['module']; // instead of payment which is localized
 	$valid=$order['valid'];
 	
 	if ($valid == 0) {
@@ -63,16 +62,18 @@ function synchroOrder($id_order)
 			break;
 		case 2: // Paiement accepted
 			$create_invoice = true;
-			$order_status = 1; // > validated
+			$invoice_status = 2; // paid
+			$order_status = 1; // validated
 			break;
 		case 3: // En cours de préparation
 			$create_invoice = true;
-			//$order_status = 2;           // Commande en Envoi en cours (mais pas encore expédiée)
-			$order_status = 2;  // In progress
+			$invoice_status = 2; // paid
+			$order_status = 2;  // In delivery (not sent yet)
 			break;
 		case 4: // In delivery
 			$create_invoice = true;
-			$order_status = 3; // > closed
+			$invoice_status = 2; // paid
+			$order_status = 3; // closed
 
 			break;
 		
@@ -80,6 +81,7 @@ function synchroOrder($id_order)
 		case 35: // delivered
 		case 37: // delivered
 			$create_invoice = true;
+			$invoice_status = 2; // paid
 			$order_status = 3; // > closed (has been sent)
 
 			break;
@@ -165,7 +167,7 @@ function synchroOrder($id_order)
 	if ($order['delivery_number'] != 0) {
 		$dolibarrOrder->date_livraison = $order['delivery_date'];
 	}
-	$dolibarrOrder->status = 1; // we start with status validated, we wiil update status after if needed
+	$dolibarrOrder->status = 1; // we start with status validated, we will update status after if needed
 	/*$dolibarrOrder->total = $total;
     $dolibarrOrder->total_net = $total_net;
     $dolibarrOrder->total_vat = $total_v;*/
@@ -219,27 +221,49 @@ function synchroOrder($id_order)
 		if ($order['delivery_number'] != 0) {
 			$dolibarrInvoice->date_livraison = $order['delivery_date'];
 		}
-		$dolibarrInvoice->lines = $lines;
+		if ($invoice_status == 1 || $invoice_status == 2) {
+			// if order is validated or paid, we mark invoice as validated first
+			$dolibarrInvoice->status=1;
+		}
+		if ($payment_type == "paypal") {
+			$dolibarrInvoice->payment_mode_id = 50; // ONLINE PAYMENT
+		} else if ($payment_type == "cheque") {
+			$dolibarrInvoice->payment_mode_id = 7; // CHEQUE
+		} else {
+			echo "Payment mode not mapped : ".$payment_type. "-> please report this issue, thanks ! ";
+			return false;
+		}
+		$dolibarrInvoice->lines = createInvoiceLines($lines);
 		
 		if ($exists["result"]->result_code == 'NOT_FOUND')
 		{
 			// Create new invoice
-			echo "Create new invoice : <br>";
+			echo "<br>Create new invoice : <br>";
 			$result = $dolibarr->createInvoice($dolibarrInvoice);
 			if ($result["result"]->result_code == 'KO')
 			{
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
 		}
-		else
-		{
-			echo "Invoice already exists.";
+
+		if (version_compare(Configuration::get('dolibarr_version'), '3.7.1') == -1) {
+			echo "<br />Your version of Dolibarr can't mark invoice as paid, please do it manually. This will be fixed in next version (maybe 3.7.1)";
+			return true;
+		} else {
+			// update invoice status
+			$dolibarrInvoice->status = $invoice_status;
+			$result = $dolibarr->updateInvoice($dolibarrInvoice);
+			if ($result["result"]->result_code == 'KO')
+			{
+				echo "Erreur de synchronisation : ".$result["result"]->result_label;
+			} else if ($result["result"]->result_code == 'NOT_FOUND')
+			{
+				echo "Invoice not found : ".$result["result"]->result_label;
+			}
 		}
 	}
 
 	return true;
-	// mark as paid
-
 }
 
 
@@ -285,6 +309,32 @@ function addShippingLine($order) {
 	}
 
 	return $line;
+}
+
+function createInvoiceLines($order_lines) {
+	$count = 0;
+	foreach ($order_lines as $order_line) {
+		$line = new DolibarrInvoiceLine();
+		$line->desc = $order_line->desc;
+		$line->vat_rate = $order_line->vat_rate;
+		$line->qty = $order_line->qty;
+		$line->unitprice = $order_line->unitprice;
+		$line->total_net = $order_line->total_net;
+		$line->total_vat = $order_line->total_vat;
+		$line->total = $order_line->total;
+		$line->date_start = ""; // dateTime
+		$line->date_end = ""; // dateTime
+		$line->payment_mode_id = ""; // unused
+		$line->product_id = "";
+		$line->product_ref = "";
+		$line->product_label = "";
+		$line->product_desc = "";
+		
+		$lines[$count] = $line;
+		$count++;
+	}
+	
+	return $lines;
 }
 
 if (Tools::isSubmit('id_order'))

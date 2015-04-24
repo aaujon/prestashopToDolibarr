@@ -95,7 +95,6 @@ function synchroClient($id_customer)
 				$contact = new DolibarrContact();
 				$contact->ref_ext= $address['id_address'];
 				$contact->socid = $result["id"];
-                $contact->statut = $client_status;
 				$contact->lastname = $address['lastname'];
 				$contact->firstname = $address['firstname'];
 				$address1=$address['address1'];

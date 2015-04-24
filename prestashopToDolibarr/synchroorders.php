@@ -33,7 +33,7 @@ if ($results = Db::getInstance()->ExecuteS($sql))
     {
         $id_order=$row['id_order'];
         echo "Synchronize order : $id_order";
-        $isOk =synchroOrder($id_order);
+        $isOk = synchroOrder($id_order);
         if (!$isOk) {
 			$anErrorOccured = true;
 			echo "Error<br/>";
