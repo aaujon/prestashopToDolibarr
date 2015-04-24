@@ -143,7 +143,7 @@ function synchroClient($id_customer)
 				public $user_login;*/
 				echo "Get Contact :".$contact->ref_ext."<br>";
 				
-				$result = $dolibarr->getContact($contact->id);
+				$result = $dolibarr->getContact($contact->ref_ext);
 				var_dump($result);
 				if ($result["result"]->result_code == 'NOT_FOUND')
 				{
@@ -159,9 +159,7 @@ function synchroClient($id_customer)
 				{
 					// Update address
 					echo "<br>update address <br>";
-					if (version_compare(Configuration::get('dolibarr_version'), '3.7') < 0) {
-						$contact->id = $result["contact"]->id; // in < 3.7, we can't update contact using it's ref_ext so we use id
-					}
+					$contact->id = $result["contact"]->id; // we can't update contact using it's ref_ext so we use id
 					
 					$result = $dolibarr->updateContact($contact);
                     var_dump($result);
