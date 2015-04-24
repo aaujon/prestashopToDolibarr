@@ -246,10 +246,10 @@ function synchroOrder($id_order)
 			}
 		}
 
-		if (version_compare(Configuration::get('dolibarr_version'), '3.7.1') == -1) {
+		/*if (version_compare(Configuration::get('dolibarr_version'), '3.7.1') == -1) {
 			echo "<br />Your version of Dolibarr can't mark invoice as paid, please do it manually. This will be fixed in next version (maybe 3.7.1)";
 			return true;
-		} else {
+		} else {*/
 			// update invoice status
 			$dolibarrInvoice->status = $invoice_status;
 			$result = $dolibarr->updateInvoice($dolibarrInvoice);
@@ -260,7 +260,7 @@ function synchroOrder($id_order)
 			{
 				echo "Invoice not found : ".$result["result"]->result_label;
 			}
-		}
+		//}
 	}
 
 	return true;

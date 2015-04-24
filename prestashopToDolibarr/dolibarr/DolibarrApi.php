@@ -1,5 +1,6 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include('DolibarrThirdParty.php');
 include('DolibarrContact.php');
 include('DolibarrProduct.php');
