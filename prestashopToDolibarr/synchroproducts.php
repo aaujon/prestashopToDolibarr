@@ -53,6 +53,13 @@ function synchroProduct($id_product)
 		$active=$product['active'];
 		$reference=$product['reference'];
 		$reference=produits_caract("$reference");
+		
+		if (!$reference)
+		{
+			// if reference isn't present create one
+			$reference = $prefix_ref_product.$id_product;
+		}
+
 		$en_vente=$product['active'];
 		$barcode=$product['ean13'];
 		//$datec=$product['date_add'];
