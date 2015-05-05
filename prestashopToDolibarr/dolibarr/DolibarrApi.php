@@ -239,11 +239,13 @@ class Dolibarr {
 	}
 
 	public function updateInvoice($invoice) {
+		echo "UpdateInvoice";
 		$params = array(
 		  "authentication" => $this->authentication,
 		  "invoice" => $invoice
 		);
 
+		var_dump($params);
 		$response = $this->client_invoice->__soapCall("updateInvoice", $params);
 		var_dump($response);
 		return $response;

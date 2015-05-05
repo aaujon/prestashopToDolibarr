@@ -207,59 +207,64 @@ function synchroOrder($id_order)
 	// Create invoice if necessary
 	if ($create_invoice)
 	{
-		echo "<br />Creating invoice if needed.<br />";
+		echo "<br />Creating/updating invoice.<br />";
 		//invoices dont really exists in prestashop, so id_order=id_invoice
 		$exists = $dolibarr->getInvoice($id_order);
-
-		$dolibarrInvoice = new DolibarrInvoice();
-		$dolibarrInvoice->ref_ext = $id_order;
-		$dolibarrInvoice->thirdparty_id = $client["thirdparty"]->id;
-		$dolibarrInvoice->date = $order["date_add"];
-		$dolibarrInvoice->total = $total;
-		$dolibarrInvoice->total_net = $total_net;
-		$dolibarrInvoice->total_vat = $total_vat;
-		if ($order['delivery_number'] != 0) {
-			$dolibarrInvoice->date_livraison = $order['delivery_date'];
-		}
-		if ($invoice_status == 1 || $invoice_status == 2) {
-			// if order is validated or paid, we mark invoice as validated first
-			$dolibarrInvoice->status=1;
-		}
-		if ($payment_type == "paypal") {
-			$dolibarrInvoice->payment_mode_id = 50; // ONLINE PAYMENT
-		} else if ($payment_type == "cheque") {
-			$dolibarrInvoice->payment_mode_id = 7; // CHEQUE
-		} else {
-			echo "Payment mode not mapped : ".$payment_type. "-> please report this issue, thanks ! ";
-			return false;
-		}
-		$dolibarrInvoice->lines = createInvoiceLines($lines);
 		
 		if ($exists["result"]->result_code == 'NOT_FOUND')
 		{
 			// Create new invoice
 			echo "<br>Create new invoice : <br>";
+			
+			$dolibarrInvoice = new DolibarrInvoice();
+			$dolibarrInvoice->ref_ext = $id_order;
+			$dolibarrInvoice->thirdparty_id = $client["thirdparty"]->id;
+			$dolibarrInvoice->date = $order["date_add"];
+			$dolibarrInvoice->total = $total;
+			$dolibarrInvoice->total_net = $total_net;
+			$dolibarrInvoice->total_vat = $total_vat;
+			if ($order['delivery_number'] != 0) {
+				$dolibarrInvoice->date_livraison = $order['delivery_date'];
+			}
+			if ($invoice_status == 1 || $invoice_status == 2) {
+				// if order is validated or paid, we mark invoice as validated first
+				$dolibarrInvoice->status=1;
+			}
+			setPaymentModeId($dolibarrInvoice, $payment_type);
+
+			$dolibarrInvoice->lines = createInvoiceLines($lines);
+			
 			$result = $dolibarr->createInvoice($dolibarrInvoice);
 			if ($result["result"]->result_code == 'KO')
 			{
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 			}
 		}
+		else
+		{
+			$dolibarrInvoice = $exists["invoice"];
+		}
 
+		
 		/*if (version_compare(Configuration::get('dolibarr_version'), '3.7.1') == -1) {
 			echo "<br />Your version of Dolibarr can't mark invoice as paid, please do it manually. This will be fixed in next version (maybe 3.7.1)";
 			return true;
 		} else {*/
 			// update invoice status
-			$dolibarrInvoice->status = $invoice_status;
-			$result = $dolibarr->updateInvoice($dolibarrInvoice);
-			if ($result["result"]->result_code == 'KO')
-			{
-				echo "Erreur de synchronisation : ".$result["result"]->result_label;
-			} else if ($result["result"]->result_code == 'NOT_FOUND')
-			{
-				echo "Invoice not found : ".$result["result"]->result_label;
-			}
+		echo "<br>Update invoice to status : " + $invoice_status + "<br>";
+		$dolibarrInvoice->status = $invoice_status;
+		if ($invoice_status == 2)
+		{	
+			setPaymentModeId($dolibarrInvoice, $payment_type);
+		}
+		$result = $dolibarr->updateInvoice($dolibarrInvoice);
+		if ($result["result"]->result_code == 'KO')
+		{
+			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+		} else if ($result["result"]->result_code == 'NOT_FOUND')
+		{
+			echo "Invoice not found : ".$result["result"]->result_label;
+		}
 		//}
 	}
 
@@ -271,7 +276,8 @@ function synchroOrder($id_order)
  * @param dolibarr
  */
 
-function retrieveDeliveryAddress($dolibarr, $addressDeliveryId) {
+function retrieveDeliveryAddress($dolibarr, $addressDeliveryId)
+{
 	$address = $dolibarr->getContact($addressDeliveryId);
 	if ($address["result"]->result_code == 'NOT_FOUND')
     {
@@ -285,7 +291,8 @@ function retrieveDeliveryAddress($dolibarr, $addressDeliveryId) {
 	return $fk_delivery_address;
 }
 
-function addShippingLine($order) {
+function addShippingLine($order)
+{
 	$line = new DolibarrOrderLines();
 	$line->desc = Configuration::get('delivery_line_label');
 	$line->qty = 1;
@@ -311,9 +318,11 @@ function addShippingLine($order) {
 	return $line;
 }
 
-function createInvoiceLines($order_lines) {
+function createInvoiceLines($order_lines)
+{
 	$count = 0;
-	foreach ($order_lines as $order_line) {
+	foreach ($order_lines as $order_line)
+	{
 		$line = new DolibarrInvoiceLine();
 		$line->desc = $order_line->desc;
 		$line->vat_rate = $order_line->vat_rate;
@@ -337,11 +346,27 @@ function createInvoiceLines($order_lines) {
 	return $lines;
 }
 
+function setPaymentModeId($dolibarrInvoice, $payment_type)
+{
+	if (!isset($payment_type)) {
+		return;
+	}
+
+	if ($payment_type == "paypal")
+	{
+		$dolibarrInvoice->payment_mode_id = 50; // ONLINE PAYMENT
+	} else if ($payment_type == "cheque")
+	{
+		$dolibarrInvoice->payment_mode_id = 7; // CHEQUE
+	} else {
+		exit("Payment mode not mapped : ".$payment_type. "-> please report this issue, thanks ! ");
+	}
+}
+
 if (Tools::isSubmit('id_order'))
 {
     $id_order=Tools::getValue('id_order');
     synchroOrder($id_order);
 }
-
 
 ?>
