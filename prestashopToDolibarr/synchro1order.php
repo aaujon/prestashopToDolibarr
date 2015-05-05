@@ -17,22 +17,19 @@ function synchroOrder($id_order)
 	$date_order=$order['date_add'];
 	$total=$order['total_paid'];
 	$total = sprintf("%.2f",$total);
-	//$total_paid_real_TTC=$order['total_paid_real'];
-	//$total_paid_real_TTC=sprintf("%.2f",$total_paid_real_TTC);
-
 	$total_net=$order['total_paid_tax_excl'];
-	//$total_a_payer_HT=sprintf("%.2f",$total_a_payer_HT);
 	$total_vat = $total - $total_net;
 	$total_vat=sprintf("%.2f",$total_vat);
 
-	// CALCUL DU PORT *********************************** 
+	// delivery
 	$total_shipping_TTC = $order['total_shipping_tax_incl'];
 	$total_shipping_TTC=sprintf("%.2f",$total_shipping_TTC);
 	$total_shipping_HT = $order['total_shipping_tax_excl'];
 	$total_shipping_HT=sprintf("%.2f",$total_shipping_HT);
 	$carrier_tax_rate = $order['carrier_tax_rate'];
 	$carrier_tax_rate=sprintf("%.2f",$carrier_tax_rate);
-	// FIN CALCUL DU PORT ***********************************
+	$delivery_number = $order['delivery_number'];
+	$delivery_date = $order['delivery_date'];
 
 	$total_shipping_TVA = $total_shipping_TTC - $total_shipping_HT;
 	$total_shipping_TVA=sprintf("%.2f",$total_shipping_TVA);
@@ -164,8 +161,8 @@ function synchroOrder($id_order)
 	$dolibarrOrder->thirdparty_id = $client["thirdparty"]->id;
 	$dolibarrOrder->fk_delivery_address = (int)$fk_delivery_address;
 	$dolibarrOrder->date = $order["date_add"];
-	if ($order['delivery_number'] != 0) {
-		$dolibarrOrder->date_livraison = $order['delivery_date'];
+	if ($delivery_number != "0") {
+		$dolibarrOrder->date_livraison = $delivery_date;
 	}
 	$dolibarrOrder->status = 1; // we start with status validated, we will update status after if needed
 	/*$dolibarrOrder->total = $total;
@@ -188,11 +185,11 @@ function synchroOrder($id_order)
 
 	// update it now to have a correct status
     
-	if (strpos(Configuration::get('dolibarr_version'), '3.6.') !== FALSE) {
-		echo "<br />Dolibarr version 3.6 can't update orders, skip update. Please consider updating Dolibarr to 3.7 to have a full synchronisation.";
+	if (version_compare(Configuration::get('dolibarr_version'), '3.7.0') == -1) {
+		echo "<br />Dolibarr version < 3.7 can't update orders, skip update. Please consider updating Dolibarr to 3.7.x to have a full synchronisation.";
 	} else {
 		// Update order status
-		echo "<br />update order<br>";
+		echo "<br />update order >status =".$order_status."<br>";
 		$oldOrder = $exists["order"];
 		$dolibarrOrder->status = $order_status;
 
@@ -218,9 +215,10 @@ function synchroOrder($id_order)
 		$dolibarrInvoice->total = $total;
 		$dolibarrInvoice->total_net = $total_net;
 		$dolibarrInvoice->total_vat = $total_vat;
-		if ($order['delivery_number'] != 0) {
-			$dolibarrInvoice->date_livraison = $order['delivery_date'];
+		if ($delivery_number != "0") {
+			$dolibarrInvoice->date_livraison = $delivery_date;
 		}
+
 		if ($invoice_status == 1 || $invoice_status == 2) {
 			// if order is validated or paid, we mark invoice as validated first
 			$dolibarrInvoice->status=1;
@@ -279,8 +277,7 @@ function retrieveDeliveryAddress($dolibarr, $addressDeliveryId) {
 		return false;
 	}
 	$fk_delivery_address = $address["contact"]->id;
-	echo ", ";
-	var_dump($address["contact"]->id);
+	echo "<br>";
 	var_dump($fk_delivery_address);
 	return $fk_delivery_address;
 }
