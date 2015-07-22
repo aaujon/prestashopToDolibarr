@@ -5,7 +5,7 @@ class DolibarrProduct {
     public $id;
 	public $ref; // nom
 	public $ref_ext;
-    public $type;
+    public $type = 0; // 0 is regular product, 1 for service
     public $label;
     public $description;
 	public $date_creation = ""; // dateTime
