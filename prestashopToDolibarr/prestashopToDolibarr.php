@@ -21,6 +21,7 @@ class prestashopToDolibarr extends Module {
     {
         Configuration::updateValue('validated', '0');
         Configuration::updateValue('client_status', 0);
+        Configuration::updateValue('use_barcode', 0);
         Configuration::updateValue('clients_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('products_last_synchro', "1970-01-01 00:00:00");
         Configuration::updateValue('orders_last_synchro', "1970-01-01 00:00:00");
@@ -55,6 +56,7 @@ class prestashopToDolibarr extends Module {
 
 			$prefix_ref_client = Tools::getValue('prefix_ref_client');
 			$client_status = Tools::getValue('client_status');
+			$use_barcode = Tools::getValue('use_barcode');
 			$prefix_ref_product = Tools::getValue('prefix_ref_product');                                          
 			$product_description = Tools::getValue('product_description');                                          
 			$delivery_line_label = Tools::getValue('delivery_line_label');                                          
@@ -69,6 +71,7 @@ class prestashopToDolibarr extends Module {
 
 			Configuration::updateValue('prefix_ref_client', $prefix_ref_client);
 			Configuration::updateValue('client_status', $client_status);
+			Configuration::updateValue('use_barcode', $use_barcode);
 			Configuration::updateValue('prefix_ref_product', $prefix_ref_product);
 			Configuration::updateValue('product_description', $product_description);
 			Configuration::updateValue('delivery_line_label', $delivery_line_label);
@@ -277,6 +280,27 @@ class prestashopToDolibarr extends Module {
                   )
                 ),
                 array(
+                  'type' => 'select',
+                  'label' => $this->l('Use barcode'),
+                  'desc' => $this->l('If yes, check that the barcode module is activated in Dolibrr'),
+                  'name' => 'use_barcode',
+                  'required' => true,
+                  'options' => array(
+                  'query' => array(
+                                  array(
+                                    'id_option' => 0,
+                                    'name' => 'No'
+                                  ),
+                                  array(
+                                    'id_option' => 1,
+                                    'name' => 'Yes'
+                                  ),
+                                ),                           // $options contains the data itself.
+                  'id' => 'id_option',
+                  'name' => 'name'
+                  )
+                ),
+                array(
                     'type' => 'text',
                     'label' => $this->l('delivery line label'),
                     'name' => 'delivery_line_label',
@@ -325,6 +349,8 @@ class prestashopToDolibarr extends Module {
         $helper->fields_value['prefix_ref_client'] = Configuration::get('prefix_ref_client');
         $helper->fields_value['prefix_ref_product'] = Configuration::get('prefix_ref_product');
         $helper->fields_value['product_description'] = Configuration::get('product_description');
+        $helper->fields_value['use_barcode'] = Configuration::get('use_barcode');
+
         $helper->fields_value['delivery_line_label'] = Configuration::get('delivery_line_label');
          
         return $helper->generateForm($fields_form);

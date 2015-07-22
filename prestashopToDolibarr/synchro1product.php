@@ -8,7 +8,6 @@ include('dolibarr/DolibarrApi.php');
 function synchroProduct($id_product)
 {
     $product_description = Configuration::get('product_description');
-    var_dump($product_description);
 
     if ($product = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."product where id_product = '".$id_product."'"))
     {
@@ -36,7 +35,6 @@ function synchroProduct($id_product)
         //var_dump($id_tax);
         $donnees_tax = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."tax where id_tax = '".$id_tax."'");
         $vat_rate=$donnees_tax['rate'];
-        echo "vat_rate : $vat_rate";
         $prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
 
         //find description
@@ -70,7 +68,10 @@ function synchroProduct($id_product)
 		$product->description = $description;
 		$product->price_net = $prix_produit_normal_HT;
 		$product->vat_rate = $vat_rate;
-		if ($barcode) {
+		
+		$use_barcode = Configuration::get('use_barcode');
+
+		if ($use_barcode == '1') {
 			$product->barcode = $barcode;
 			$product->barcode_type = '2'; // 2 = ean13
 		}
@@ -79,7 +80,6 @@ function synchroProduct($id_product)
         {
 			// Create new product
 			echo "Create new product : <br>";
-			var_dump($product);
 			$result = $dolibarr->createProduct($product);
 			
 			if ($result["result"]->result_code == 'KO')
@@ -90,7 +90,7 @@ function synchroProduct($id_product)
 				echo "<br>result : " ;
 				var_dump($result);
 			}
-		} else
+		} else if ($exists["result"]->result_code == 'OK')
         {
 			// Update product
 			echo "update product<br>";
@@ -99,7 +99,32 @@ function synchroProduct($id_product)
 			$result = $dolibarr->updateProduct($product);
 			if ($result["result"]->result_code == 'KO')
             {
+				if (strpos($result["result"]->result_label, 'CONSTRAINT `fk_product_barcode_type') !== FALSE)
+				{
+					echo "Synchronisation Error : Looks like you have enabled barcode in this module but not in your Dolibarr installation.";
+				}
+				else
+				{
+					echo "Erreur de synchronisation : ".$result["result"]->result_label;
+					echo "<br>product : " ;
+					var_dump($product);
+					echo "<br>result : " ;
+					var_dump($result);
+				}
+			}
+		} else
+		{
+			if (strpos($result["result"]->result_label, 'CONSTRAINT `fk_product_barcode_type') !== FALSE)
+			{
+				echo "Synchronisation Error : Looks like you have enabled barcode in this module but not in your Dolibarr installation.";
+			}
+			else
+			{
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
+				echo "<br>product : " ;
+				var_dump($product);
+				echo "<br>result : " ;
+				var_dump($result);
 			}
 		}	
 
