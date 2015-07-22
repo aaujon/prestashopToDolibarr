@@ -35,6 +35,7 @@ class DolibarrProduct {
     public $import_key;
     public $dir;
     public $images;
+    public $warehouse_ref; // can be used for stock, new in Dolibarr 3.8
 }
 
 ?>
