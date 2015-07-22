@@ -143,7 +143,6 @@ function synchroClient($id_customer)
 				echo "Get Contact :".$contact->ref_ext."<br>";
 				
 				$result = $dolibarr->getContact($contact->ref_ext);
-				var_dump($result);
 				if ($result["result"]->result_code == 'NOT_FOUND')
 				{
 					// Create address
@@ -153,8 +152,9 @@ function synchroClient($id_customer)
 					if ($result["result"]->result_code != 'OK')
 					{
 						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
+						var_dump($result);
 					}
-				} else
+				} else if ($result["result"]->result_code == 'OK')
 				{
 					// Update address
 					echo "<br>update address <br>";
@@ -165,7 +165,13 @@ function synchroClient($id_customer)
 					if ($result["result"]->result_code != 'OK')
 					{
 						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
+						var_dump($result);
+
 					}
+				} else
+				{
+					echo "Erreur de synchronisation address : ".$result["result"]->result_label;
+					var_dump($result);
 				}
 			}
 		}
