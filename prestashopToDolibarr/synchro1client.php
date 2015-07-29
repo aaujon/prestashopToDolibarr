@@ -52,23 +52,21 @@ function synchroClient($id_customer)
     $client->status = $client_status;
 	$client->ref = $donnees_customer['firstname']." ".$donnees_customer['lastname'];
 	$client->email = $mail;
-	//$client->phone = $phone;
-	//$client->address = $address1." ".$address2;
-	//$client->town = $city;
-	//$client->zip = $postcode;
-	//$client->country_id = $country;
 	$client->date_modification = new DateTime('NOW');
 	$client->url = _PS_BASE_URL_.__PS_BASE_URI__;
 
 	if ($exists["result"]->result_code == 'NOT_FOUND')
     {
 		// Create new user
-		echo "Create new user <br>";
+		echo "Create new user :";
 		$result = $dolibarr->createUser($client);
-		var_dump($result);
+
+		echo $result["result"]->result_code . "<br/>" ;
 		if ($result["result"]->result_code != 'OK')
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+			var_dump($result);
+			return FALSE;
 		}
 	} else
     {
@@ -78,6 +76,8 @@ function synchroClient($id_customer)
 		$client->id = $oldClient->id;
 		echo $client->id . "<br";
 		$result = $dolibarr->updateUser($client);
+		echo $result["result"]->result_code . "<br/>" ;
+
 		if ($result["result"]->result_code != 'OK')
         {
 			echo "Erreur de synchronisation : ".$result["result"]->result_label;
@@ -127,55 +127,46 @@ function synchroClient($id_customer)
 				$contact->email = $mail;
 				$contact->birthday = $birthday;
 				$contact->civility_id = $civilite;
-				//public $phone_pro;
-				//public $fax;
-						
-				//public $code;
-				
-				/*public $default_lang;
-				public $no_email;
-				public $ref_facturation;
-				public $ref_contrat;
-				public $ref_commande;
-				public $ref_propal;
-				public $user_id;
-				public $user_login;*/
-				echo "Get Contact :".$contact->ref_ext."<br>";
 				
 				$result = $dolibarr->getContact($contact->ref_ext);
 				if ($result["result"]->result_code == 'NOT_FOUND')
 				{
 					// Create address
-					echo "<br>create address <br>";
+					echo "<br>create address : ";
 					$result = $dolibarr->createContact($contact);
-					var_dump($result);
+					echo $result["result"]->result_code . "<br/>" ;
+
 					if ($result["result"]->result_code != 'OK')
 					{
 						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
 						var_dump($result);
+						return FALSE;
 					}
 				} else if ($result["result"]->result_code == 'OK')
 				{
 					// Update address
-					echo "<br>update address <br>";
+					echo "<br>update address : ";
 					$contact->id = $result["contact"]->id; // we can't update contact using it's ref_ext so we use id
 					
 					$result = $dolibarr->updateContact($contact);
-                    var_dump($result);
+					echo $result["result"]->result_code . "<br/>" ;
 					if ($result["result"]->result_code != 'OK')
 					{
 						echo "Erreur de synchronisation address : ".$result["result"]->result_label;
 						var_dump($result);
-
+						return FALSE;
 					}
 				} else
 				{
 					echo "Erreur de synchronisation address : ".$result["result"]->result_label;
 					var_dump($result);
+					return FALSE;
 				}
 			}
 		}
 	}
+	
+	return TRUE;
 }
 
 if (Tools::isSubmit('id_customer'))

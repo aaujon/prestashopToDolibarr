@@ -25,16 +25,20 @@ if (Tools::isSubmit('action')) {
 $last_synchro = Configuration::get('clients_last_synchro');
 echo "Synchronisation of clients begins for modification since ".$last_synchro."<br>";
 
-
+int $failed_number = 0;
 $sql="select id_customer from "._DB_PREFIX_."customer where date_upd > '".$last_synchro."'";
 if ($results = Db::getInstance()->ExecuteS($sql))
     foreach ($results as $row)
     {
         $id_customer=$row['id_customer'];
-        synchroClient($id_customer);
+        $hasSucceded = synchroClient($id_customer);
+        if (!$hasSucceded)
+        {
+			$failed_number++;
+		}
     }
 
-echo "Synchronisation of clients done<br>";
+echo "Synchronisation of clients done : ". $failed_number . "error(s)<br>";
 $time = new DateTime('NOW');
 Configuration::updateValue('clients_last_synchro',  $time->format("Y-m-d H:i:s"));
 
