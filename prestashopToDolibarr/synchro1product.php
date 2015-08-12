@@ -35,7 +35,7 @@ function synchroProduct($id_product)
         //var_dump($id_tax);
         $donnees_tax = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."tax where id_tax = '".$id_tax."'");
         $vat_rate=$donnees_tax['rate'];
-        $prix_produit_normal_HT=sprintf("%.2f",$prix_produit_normal_HT);
+        $prix_produit_normal_HT=sprintf("%.5f",$prix_produit_normal_HT);
 
         //find description
 		$product_data = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."product_lang where id_product = '".$id_product."' AND id_lang = '".Context::getContext()->language->id."'");
@@ -79,10 +79,13 @@ function synchroProduct($id_product)
 		if ($exists["result"]->result_code == 'NOT_FOUND')
         {
 			// Create new product
-			echo "Create new product : <br>";
+			echo "Create new product : ";
 			$result = $dolibarr->createProduct($product);
 			
-			if ($result["result"]->result_code == 'KO')
+			echo $result["result"]->result_code . "<br/>" ;
+
+			
+			if ($result["result"]->result_code != 'OK')
             {
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
 				echo "<br>product : " ;
@@ -93,11 +96,14 @@ function synchroProduct($id_product)
 		} else if ($exists["result"]->result_code == 'OK')
         {
 			// Update product
-			echo "update product<br>";
+			echo "update product : ";
 			$oldProduct = $exists["product"];
 			$product->id = $oldProduct->id;
 			$result = $dolibarr->updateProduct($product);
-			if ($result["result"]->result_code == 'KO')
+			
+			echo $result["result"]->result_code . "<br/>" ;
+
+			if ($result["result"]->result_code != 'OK')
             {
 				if (strpos($result["result"]->result_label, 'CONSTRAINT `fk_product_barcode_type') !== FALSE)
 				{
