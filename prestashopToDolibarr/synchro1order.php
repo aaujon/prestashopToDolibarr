@@ -7,7 +7,7 @@ include('dolibarr/DolibarrApi.php');
 
 function synchroOrder($id_order)
 {
-	echo "Synchronisation order : $id_order<br>"; 
+	echo "Synchronier order : $id_order<br>"; 
 	
 
 	// Retrieve order information
@@ -38,7 +38,7 @@ function synchroOrder($id_order)
 	
 	if ($valid == 0) {
 		echo "order is not valid. skip it.";
-		return true;
+		return TRUE;
 	}
 
 	// get order status
@@ -94,8 +94,8 @@ function synchroOrder($id_order)
 	
 	// For now, we only want to synchonize orders that have been validated and paid
 	if ($order_status <= 0) {
-		echo "<br />Error : order isn't valid. Status ==".$order_status;
-		return true;
+		echo "<br />Warning : order isn't valid. Status ==".$order_status;
+		return TRUE;
 	}
 
 	// load order details
@@ -131,26 +131,18 @@ function synchroOrder($id_order)
 	$dolibarr = Dolibarr::getInstance();
 
 	// retrieve user
-	echo "<br> Client : ";
-	var_dump($id_customer);
 	$client = $dolibarr->getUser("PSUSER-".$id_customer);
 	if ($client["result"]->result_code == 'NOT_FOUND')
     {
 		echo "<br />Error : client doesn't exist. Try to synchronize clients first.";
-		return false;
+		return FALSE;
 	}
-	echo ", ";
-	var_dump($client["thirdparty"]->id);
-	
-	echo "<br> Address : ";
-	var_dump($id_address_delivery);
 	
 	// Retrieve delivery address
 	$fk_delivery_address = retrieveDeliveryAddress($dolibarr, $id_address_delivery);
 	if ($fk_delivery_address == false) {
-		return false;
+		return FALSE;
 	}
-		
 
 	// Check if already exists in Dolibarr
 	$exists = $dolibarr->getOrder($id_order);
@@ -173,13 +165,16 @@ function synchroOrder($id_order)
 	if ($exists["result"]->result_code == 'NOT_FOUND')
     {
 		// Create new order
-		echo "Create new order : <br>";
+		echo "Create new order : ";
 		var_dump($dolibarrOrder);
 		$result = $dolibarr->createOrder($dolibarrOrder);
-		var_dump($result);
-		if ($result["result"]->result_code == 'KO')
+		
+		echo $result["result"]->result_code . "<br/>" ;
+
+		if ($result["result"]->result_code != 'OK')
         {
 			echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
+			return FALSE;
 		}
 	}
 
@@ -189,14 +184,18 @@ function synchroOrder($id_order)
 		echo "<br />Dolibarr version < 3.7 can't update orders, skip update. Please consider updating Dolibarr to 3.7.x to have a full synchronisation.";
 	} else {
 		// Update order status
-		echo "<br />update order >status =".$order_status."<br>";
+		echo "<br />update order >status = ".$order_status;
 		$oldOrder = $exists["order"];
 		$dolibarrOrder->status = $order_status;
 
 		$result = $dolibarr->updateOrder($dolibarrOrder);
-		if ($result["result"]->result_code == 'KO')
+		
+		echo $result["result"]->result_code . "<br/>" ;
+
+		if ($result["result"]->result_code != 'OK')
 		{
 			echo "<br />Erreur de synchronisation : ".$result["result"]->result_label;
+			return FALSE;
 		}
 	}
 	
@@ -204,7 +203,7 @@ function synchroOrder($id_order)
 	// Create invoice if necessary
 	if ($create_invoice)
 	{
-		echo "<br />Creating invoice if needed.<br />";
+		echo "<br />Creating invoice.<br />";
 		//invoices dont really exists in prestashop, so id_order=id_invoice
 		$exists = $dolibarr->getInvoice($id_order);
 
@@ -229,39 +228,49 @@ function synchroOrder($id_order)
 			$dolibarrInvoice->payment_mode_id = 7; // CHEQUE
 		} else {
 			echo "Payment mode not mapped : ".$payment_type. "-> please report this issue, thanks ! ";
-			return false;
+			return FALSE;
 		}
 		$dolibarrInvoice->lines = createInvoiceLines($lines);
 		
 		if ($exists["result"]->result_code == 'NOT_FOUND')
 		{
 			// Create new invoice
-			echo "<br>Create new invoice : <br>";
+			echo "<br>Create new invoice : ";
 			$result = $dolibarr->createInvoice($dolibarrInvoice);
-			if ($result["result"]->result_code == 'KO')
+			echo $result["result"]->result_code . "<br/>" ;
+
+			if ($result["result"]->result_code != 'OK')
 			{
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
+				return FALSE;
 			}
 		}
 
 		if (version_compare(Configuration::get('dolibarr_version'), '3.7.1') == -1) {
 			echo "<br />Your version of Dolibarr can't mark invoice as paid, please do it manually. This will be fixed in next version (maybe 3.7.1)";
-			return true;
+			return TRUE;
 		} else {
 			// update invoice status
+			echo "<br>update invoice status : ";
+
 			$dolibarrInvoice->status = $invoice_status;
 			$result = $dolibarr->updateInvoice($dolibarrInvoice);
+			
+			echo $result["result"]->result_code . "<br/>" ;
+
 			if ($result["result"]->result_code == 'KO')
 			{
 				echo "Erreur de synchronisation : ".$result["result"]->result_label;
+				return FALSE;
 			} else if ($result["result"]->result_code == 'NOT_FOUND')
 			{
 				echo "Invoice not found : ".$result["result"]->result_label;
+				return FALSE;
 			}
 		}
 	}
 
-	return true;
+	return TRUE;
 }
 
 
@@ -277,8 +286,6 @@ function retrieveDeliveryAddress($dolibarr, $addressDeliveryId) {
 		return false;
 	}
 	$fk_delivery_address = $address["contact"]->id;
-	echo "<br>";
-	var_dump($fk_delivery_address);
 	return $fk_delivery_address;
 }
 

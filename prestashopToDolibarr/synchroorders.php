@@ -25,33 +25,28 @@ if (Tools::isSubmit('action')) {
 $last_synchro = Configuration::get('orders_last_synchro');
 echo "Synchronisation of orders begins for modification since ".$last_synchro."<br>";
 
+$failed_number = 0;
 
 $sql="select * from "._DB_PREFIX_."orders where date_upd > '".$last_synchro."'";
-$anErrorOccured = false;
 if ($results = Db::getInstance()->ExecuteS($sql))
+{
     foreach ($results as $row)
     {
         $id_order=$row['id_order'];
         echo "Synchronize order : $id_order";
-        $isOk = synchroOrder($id_order);
-        if (!$isOk) {
-			$anErrorOccured = true;
-			echo "Error<br/>";
-		} else {
-			echo "OK<br/>";
+        $hasSucceded = synchroOrder($id_order);
+        if (!$hasSucceded)
+        {
+			$failed_number++;
 		}
 		
     }
+}
 
-echo "Synchronisation of orders done<br>";
-if ($anErrorOccured)
-{
-	echo "Some synchronisation failed, check log<br>";
-}
-else 
-{
-	$time = new DateTime('NOW');
-	Configuration::updateValue('orders_last_synchro',  $time->format("Y-m-d H:i:s"));
-}
+echo "Synchronisation of orders done : ". $failed_number . "error(s)<br>";
+
+$time = new DateTime('NOW');
+Configuration::updateValue('orders_last_synchro',  $time->format("Y-m-d H:i:s"));
+
 
 ?>

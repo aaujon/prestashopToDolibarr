@@ -156,17 +156,6 @@ class prestashopToDolibarr extends Module {
     {
         // Get default language
         $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-
-        $client_status_options = array(
-          array(
-            'id_option' => 0,
-            'name' => 'Closed'
-          ),
-          array(
-            'id_option' => 1,
-            'name' => 'In activity'
-          ),
-        );
          
         // Init Fields form array
         $fields_form[0]['form'] = array(
@@ -274,7 +263,7 @@ class prestashopToDolibarr extends Module {
                                     'id_option' => 1,
                                     'name' => 'Full description'
                                   ),
-                                ),                           // $options contains the data itself.
+                                ),
                   'id' => 'id_option',
                   'name' => 'name'
                   )
@@ -295,7 +284,7 @@ class prestashopToDolibarr extends Module {
                                     'id_option' => 1,
                                     'name' => 'Yes'
                                   ),
-                                ),                           // $options contains the data itself.
+                                ),
                   'id' => 'id_option',
                   'name' => 'name'
                   )

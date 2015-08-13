@@ -7,7 +7,11 @@ include('dolibarr/DolibarrApi.php');
 
 function synchroProduct($id_product)
 {
+	
+	echo "<br/>Synchronize product : $id_product<br>"; 
+
     $product_description = Configuration::get('product_description');
+    $use_barcode = Configuration::get('use_barcode');
 
     if ($product = Db::getInstance()->GetRow("select * from "._DB_PREFIX_."product where id_product = '".$id_product."'"))
     {
@@ -57,9 +61,6 @@ function synchroProduct($id_product)
   
 
         $dolibarr = Dolibarr::getInstance();
-
-		// Check if already exists in Dolibarr
-		$exists = $dolibarr->getProduct($prefix_ref_product.$id_product);
 		
 		$product = new DolibarrProduct();
 		$product->ref_ext = $prefix_ref_product.$id_product;
@@ -69,12 +70,13 @@ function synchroProduct($id_product)
 		$product->price_net = $prix_produit_normal_HT;
 		$product->vat_rate = $vat_rate;
 		
-		$use_barcode = Configuration::get('use_barcode');
-
 		if ($use_barcode == '1') {
 			$product->barcode = $barcode;
 			$product->barcode_type = '2'; // 2 = ean13
 		}
+		
+		// Check if already exists in Dolibarr
+		$exists = $dolibarr->getProduct($prefix_ref_product.$id_product);
 
 		if ($exists["result"]->result_code == 'NOT_FOUND')
         {
@@ -92,6 +94,7 @@ function synchroProduct($id_product)
 				var_dump($product);
 				echo "<br>result : " ;
 				var_dump($result);
+				return FALSE;
 			}
 		} else if ($exists["result"]->result_code == 'OK')
         {
@@ -116,6 +119,7 @@ function synchroProduct($id_product)
 					var_dump($product);
 					echo "<br>result : " ;
 					var_dump($result);
+					return FALSE;
 				}
 			}
 		} else
@@ -131,10 +135,13 @@ function synchroProduct($id_product)
 				var_dump($product);
 				echo "<br>result : " ;
 				var_dump($result);
+				return FALSE;
 			}
 		}	
 
     }
+    
+    return TRUE;
 }
 
 if (Tools::isSubmit('id_product'))

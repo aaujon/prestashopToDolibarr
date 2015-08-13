@@ -7,7 +7,7 @@ include('dolibarr/DolibarrApi.php');
 
 function synchroClient($id_customer)
 {
-	echo "<br/>Synchronisation client : $id_customer<br>"; 
+	echo "<br/>Synchronize client : $id_customer<br>"; 
 
 	// retrieve params
 	$prefix_ref_client=Configuration::get('prefix_ref_client');
