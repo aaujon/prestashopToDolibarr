@@ -63,25 +63,36 @@ function synchroClient($id_customer)
 	if ($exists["result"]->result_code == 'NOT_FOUND')
     {
 		// Create new user
-		echo "Create new user <br>";
+		echo "Create new user :";
 		$result = $dolibarr->createUser($client);
-		var_dump($result);
+		
 		if ($result["result"]->result_code != 'OK')
         {
-			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+			echo "FAILED<br>Erreur de synchronisation : ".$result["result"]->result_label;
 		}
+		else
+		{
+			echo "OK<br>";
+		}
+		var_dump($result);
 	} else
     {
 		// Update user
 		echo "update user : ";
 		$oldClient = $exists["thirdparty"];
 		$client->id = $oldClient->id;
-		echo $client->id . "<br";
+		echo $client->id . "";
 		$result = $dolibarr->updateUser($client);
 		if ($result["result"]->result_code != 'OK')
         {
-			echo "Erreur de synchronisation : ".$result["result"]->result_label;
+			echo "FAILED<br>Erreur de synchronisation : ".$result["result"]->result_label;
 		}
+		else
+		{
+			echo "OK<br>";
+		}
+		var_dump($result);
+
 	}
 	
 	if ($result["result"]->result_code == 'OK')
